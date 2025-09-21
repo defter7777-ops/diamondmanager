@@ -23,6 +23,8 @@ class AuthService {
 
   async login(credentials) {
     try {
+      console.log('🌐 Making login request to:', `${API_BASE_URL}/api/v1/auth/login`);
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
@@ -32,7 +34,13 @@ class AuthService {
         body: JSON.stringify(credentials)
       });
 
-      const data = await response.json();
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', [...response.headers.entries()]);
+      
+      const responseText = await response.text();
+      console.log('📄 Response text:', responseText.substring(0, 200));
+      
+      const data = JSON.parse(responseText);
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed');
