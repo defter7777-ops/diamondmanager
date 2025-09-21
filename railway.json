@@ -1,0 +1,21 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm install && npm run build"
+  },
+  "deploy": {
+    "startCommand": "npx serve -s build -p $PORT",
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 30,
+    "restartPolicyType": "ON_FAILURE"
+  },
+  "variables": {
+    "NODE_ENV": "production",
+    "REACT_APP_API_BASE_URL": "https://diamondmanager-frontend.up.railway.app",
+    "REACT_APP_AUTH_SERVICE_URL": "https://newapp-backend-production.up.railway.app",
+    "REACT_APP_USER_SERVICE_URL": "https://user-service-production-840d.up.railway.app",
+    "REACT_APP_TEAM_SERVICE_URL": "https://team-service-production.up.railway.app",
+    "REACT_APP_FEEDBACK_SERVICE_URL": "https://feedback-service-production-555d.up.railway.app"
+  }
+}
