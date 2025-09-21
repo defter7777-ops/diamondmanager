@@ -29,7 +29,7 @@
 /* Diamond Makers Background Pattern */
 .diamond-background {
   background-image: url('./assets/images/background.jpg');
-  background-size: cover;
+  background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
