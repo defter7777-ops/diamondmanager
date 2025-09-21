@@ -16,10 +16,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    initializeApp();
-  }, [initializeApp]);
-
   const initializeApp = useCallback(async () => {
     try {
       const authStatus = await authService.checkAuthStatus();
@@ -37,6 +33,10 @@ function App() {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    initializeApp();
+  }, [initializeApp]);
 
   const initializeDiamondCoach = async (user) => {
     try {
