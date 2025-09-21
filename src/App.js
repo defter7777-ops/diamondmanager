@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 
@@ -18,9 +18,9 @@ function App() {
 
   useEffect(() => {
     initializeApp();
-  }, []);
+  }, [initializeApp]);
 
-  const initializeApp = async () => {
+  const initializeApp = useCallback(async () => {
     try {
       const authStatus = await authService.checkAuthStatus();
       
@@ -36,7 +36,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const initializeDiamondCoach = async (user) => {
     try {
