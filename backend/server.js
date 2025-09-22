@@ -25,8 +25,8 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-// Claude API Proxy Route
-app.post('/api/ai/chat', async (req, res) => {
+// Claude API Proxy Routes (both paths for compatibility)
+const handleClaudeRequest = async (req, res) => {
   try {
     console.log('🤖 Proxying request to Claude API...');
     
@@ -73,7 +73,11 @@ app.post('/api/ai/chat', async (req, res) => {
       });
     }
   }
-});
+};
+
+// Register both routes for compatibility
+app.post('/api/ai/chat', handleClaudeRequest);
+app.post('/ai/chat', handleClaudeRequest);
 
 // Health check
 app.get('/api/health', (req, res) => {

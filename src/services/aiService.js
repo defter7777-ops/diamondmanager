@@ -193,7 +193,7 @@ class AIService {
         }
       ];
 
-      const response = await fetch(this.baseUrl + '/ai/chat', {
+      const response = await fetch(this.baseUrl + '/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
