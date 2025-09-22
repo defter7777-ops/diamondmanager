@@ -321,6 +321,46 @@ class TaskService {
         goalId: 'goal_main_revenue'
       },
       
+      // Juhani's specific tasks
+      {
+        id: 'task_juhani_ai_training',
+        title: 'AI-koulutus ja bisneslogiikan kehittäminen',
+        description: 'Järjestä aikaa AI-koulutukseen ja siihen, että pääset kehittämään bisneslogiikkaa sekä kartoittamaan potentiaalisia asiakkaita / asiakasryhmiä.',
+        status: 'pending',
+        priority: 'high',
+        assignedTo: 'juhani',
+        createdBy: 'system',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        strategicValue: 8,
+        completionRate: 0,
+        category: 'Myynti & Asiakashankinta',
+        teamVisible: true,
+        estimatedTime: '2-3 viikkoa',
+        requiredSkills: ['Myynnin kehittäminen', 'Asiakasanalyysi', 'AI-osaamisen kehitys'],
+        goalId: 'goal_main_revenue'
+      },
+      
+      // Mikko's specific tasks  
+      {
+        id: 'task_mikko_payment_methods',
+        title: 'Maksutapojen kartoitus AI:n kanssa',
+        description: 'Kartoita käytössä olevat maksutavat AI:n kanssa ja käykää ne läpi Tommin ja Peten kanssa. Käytä esimerkkeinä Diamond Makersia sekä Mikon omistamaa Farmastic Oy:ta.',
+        status: 'pending',
+        priority: 'high',
+        assignedTo: 'mikko',
+        createdBy: 'system',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        strategicValue: 8,
+        completionRate: 0,
+        category: 'Talous & Maksujärjestelmät',
+        teamVisible: true,
+        estimatedTime: '1-2 viikkoa',
+        requiredSkills: ['Talousanalyysi', 'Maksujärjestelmät', 'Liiketoimintaprosessit'],
+        goalId: 'goal_main_revenue'
+      },
+      
       // General development tasks
       {
         id: 'task_default_1',

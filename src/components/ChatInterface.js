@@ -154,6 +154,212 @@ Kerro mitä mietit! ✨`;
     }
   };
 
+  // Handle task creation via AI
+  const handleTaskCreation = async (input, context, user) => {
+    const userId = user?.id || user?.firstName?.toLowerCase() || 'user';
+    
+    // Extract task details from the message
+    let taskTitle = input;
+    let assignedTo = userId;
+    
+    // Parse "luo tehtävä: [title]" format
+    const titleMatch = input.match(/(?:luo tehtävä|create task|lisää tehtävä|uusi tehtävä):\s*(.+)/i);
+    if (titleMatch) {
+      taskTitle = titleMatch[1].trim();
+    }
+    
+    // Parse assignment "anna tehtävä [person]: [title]" format
+    const assignMatch = input.match(/(?:anna tehtävä|give task)\s+(\w+):\s*(.+)/i);
+    if (assignMatch) {
+      assignedTo = assignMatch[1].toLowerCase();
+      taskTitle = assignMatch[2].trim();
+    }
+    
+    // Create the task
+    const newTask = taskService.saveTask({
+      title: taskTitle,
+      description: `Luotu keskustelussa: ${input}`,
+      priority: 'medium',
+      assignedTo: assignedTo,
+      status: 'pending'
+    }, userId);
+    
+    // Update local state
+    setActiveTasks(prev => [...prev, newTask]);
+    
+    // Generate team member suggestion if applicable
+    const profile = profileService.getUserProfile(assignedTo);
+    const teamSuggestion = assignedTo !== userId ? 
+      `\n\n🤝 **Delegoitu henkilölle:** ${profile?.name || assignedTo}` : '';
+    
+    return {
+      type: 'task-created',
+      content: `✅ **Tehtävä luotu!**\n\n**"${newTask.title}"**\n\n📋 Tehtävä ID: ${newTask.id}\n⭐ Strateginen arvo: ${newTask.strategicValue}/10\n⏱️ Arvioitu aika: ${newTask.estimatedTime}\n📅 Status: ${newTask.status === 'pending' ? 'Odottaa' : 'Aktiivinen'}${teamSuggestion}\n\n💡 **Voit nyt:**\n• Muokata: "Muokkaa tehtävää ${newTask.id}: [uusi kuvaus]"\n• Delegoida: "Anna tehtävä [nimi]: ${newTask.title}"\n• Merkitä valmiiksi: "Merkitse tehtävä ${newTask.id} valmiiksi"`,
+      actions: [
+        {
+          emoji: '✏️',
+          label: 'Muokkaa tehtävää',
+          action: 'edit-task-prompt',
+          data: { taskId: newTask.id }
+        },
+        {
+          emoji: '📋',
+          label: 'Näytä kaikki tehtävät',
+          action: 'show-all-tasks',
+          data: {}
+        }
+      ]
+    };
+  };
+
+  // Handle task editing via AI
+  const handleTaskEdit = async (input, context, user) => {
+    const userId = user?.id || user?.firstName?.toLowerCase() || 'user';
+    
+    // Parse task ID and new details
+    const editMatch = input.match(/(?:muokkaa tehtävä|päivitä tehtävä|edit task)\s+(\w+):\s*(.+)/i);
+    const numberMatch = input.match(/(?:muokkaa tehtävä|päivitä tehtävä)\s+(\d+):\s*(.+)/i);
+    
+    let taskId, newContent;
+    
+    if (editMatch) {
+      taskId = editMatch[1];
+      newContent = editMatch[2].trim();
+    } else if (numberMatch) {
+      // Convert number to task (get nth task from user's tasks)
+      const taskNumber = parseInt(numberMatch[1]);
+      const userTasks = taskService.getUserTasks(userId);
+      if (userTasks[taskNumber - 1]) {
+        taskId = userTasks[taskNumber - 1].id;
+        newContent = numberMatch[2].trim();
+      }
+    }
+    
+    if (!taskId) {
+      return `🤔 **Tehtävää ei löytynyt.**\n\nKokeile:\n• "Muokkaa tehtävää [ID]: [uusi kuvaus]"\n• "Muokkaa tehtävää 1: [uusi kuvaus]"\n\nNäytä tehtävät: "Näytä tehtävät"`;
+    }
+    
+    // Update the task
+    const updatedTask = taskService.updateTask(taskId, {
+      title: newContent,
+      description: `Päivitetty: ${newContent}`
+    }, userId);
+    
+    if (!updatedTask) {
+      return `❌ **Tehtävän päivitys epäonnistui.**\n\nTarkista tehtävä ID ja yritä uudelleen.`;
+    }
+    
+    // Update local state
+    setActiveTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
+    
+    return {
+      type: 'task-updated',
+      content: `✅ **Tehtävä päivitetty!**\n\n**Uusi kuvaus:** "${updatedTask.title}"\n\n📋 Tehtävä ID: ${updatedTask.id}\n⭐ Strateginen arvo: ${updatedTask.strategicValue}/10\n📅 Päivitetty: ${new Date().toLocaleString('fi-FI')}\n\n💡 Tehtävä on nyt ajan tasalla!`,
+      actions: [
+        {
+          emoji: '📋',
+          label: 'Näytä kaikki tehtävät',
+          action: 'show-all-tasks',
+          data: {}
+        }
+      ]
+    };
+  };
+
+  // Handle task assignment via AI
+  const handleTaskAssignment = async (input, context, user) => {
+    const userId = user?.id || user?.firstName?.toLowerCase() || 'user';
+    
+    // Parse assignment command
+    const assignMatch = input.match(/(?:anna tehtävä|delegoi|give task)\s+(\w+):\s*(.+)/i);
+    
+    if (!assignMatch) {
+      return `🤔 **En ymmärtänyt delegointia.**\n\nKokeile:\n• "Anna tehtävä Petelle: Tee markkinointimateriaali"\n• "Anna tehtävä Jannelle: Suunnittele käyttöliittymä"\n• "Anna tehtävä Tommille: Arkkitehtuurin suunnittelu"`;
+    }
+    
+    const assignedTo = assignMatch[1].toLowerCase();
+    const taskTitle = assignMatch[2].trim();
+    
+    // Create new task assigned to specific person
+    const newTask = taskService.saveTask({
+      title: taskTitle,
+      description: `Delegoitu ${user?.firstName || 'käyttäjältä'}: ${taskTitle}`,
+      priority: 'medium',
+      assignedTo: assignedTo,
+      status: 'pending'
+    }, userId);
+    
+    setActiveTasks(prev => [...prev, newTask]);
+    
+    // Get assignee profile for better response
+    const assigneeProfile = profileService.getUserProfile(assignedTo);
+    const assigneeName = assigneeProfile?.name || assignedTo.charAt(0).toUpperCase() + assignedTo.slice(1);
+    
+    return {
+      type: 'task-assigned',
+      content: `🤝 **Tehtävä delegoitu!**\n\n**Tehtävä:** "${newTask.title}"\n**Vastaanottaja:** ${assigneeName}\n\n📋 Tehtävä ID: ${newTask.id}\n⭐ Strateginen arvo: ${newTask.strategicValue}/10\n📅 Status: Odottaa ${assigneeName}:n hyväksyntää\n\n💡 ${assigneeName} näkee tämän tehtävän omassa DiamondManagerissaan ja voi hyväksyä tai kommentoida sitä.`,
+      actions: [
+        {
+          emoji: '👥',
+          label: 'Näytä tiimin tehtävät',
+          action: 'show-team-tasks',
+          data: {}
+        }
+      ]
+    };
+  };
+
+  // Handle task completion via AI
+  const handleTaskCompletion = async (input, context, user) => {
+    const userId = user?.id || user?.firstName?.toLowerCase() || 'user';
+    
+    // Parse completion command
+    const completeMatch = input.match(/(?:merkitse valmis|tehtävä valmis|complete task)\s+(\w+)/i);
+    const numberMatch = input.match(/(?:merkitse tehtävä|tehtävä)\s+(\d+)\s+(?:valmis|completed)/i);
+    
+    let taskId;
+    
+    if (completeMatch) {
+      taskId = completeMatch[1];
+    } else if (numberMatch) {
+      const taskNumber = parseInt(numberMatch[1]);
+      const userTasks = taskService.getUserTasks(userId);
+      if (userTasks[taskNumber - 1]) {
+        taskId = userTasks[taskNumber - 1].id;
+      }
+    }
+    
+    if (!taskId) {
+      return `🤔 **En löytänyt tehtävää merkittäväksi valmiiksi.**\n\nKokeile:\n• "Merkitse tehtävä [ID] valmiiksi"\n• "Merkitse tehtävä 1 valmiiksi"\n• "Tehtävä [ID] valmis"`;
+    }
+    
+    // Mark task as completed
+    const completedTask = taskService.updateTask(taskId, {
+      status: 'completed',
+      completedAt: new Date().toISOString()
+    }, userId);
+    
+    if (!completedTask) {
+      return `❌ **Tehtävän merkitseminen epäonnistui.**\n\nTarkista tehtävä ID ja yritä uudelleen.`;
+    }
+    
+    // Update local state
+    setActiveTasks(prev => prev.map(t => t.id === taskId ? completedTask : t));
+    
+    return {
+      type: 'task-completed',
+      content: `🎉 **Tehtävä merkitty valmiiksi!**\n\n**"${completedTask.title}"**\n\n✅ Status: Valmis\n📅 Valmistunut: ${new Date().toLocaleString('fi-FI')}\n⭐ Strateginen arvo: ${completedTask.strategicValue}/10\n\n💪 **Hienoa työtä!** Tämä vie Diamond Makersia lähemmäksi €1M tavoitetta! 🚀`,
+      actions: [
+        {
+          emoji: '📊',
+          label: 'Näytä edistymistilastot',
+          action: 'show-progress-stats',
+          data: {}
+        }
+      ]
+    };
+  };
+
   // Handle task-related commands
   const handleTaskCommand = async (input, context, user) => {
     const lowerInput = input.toLowerCase();
@@ -273,6 +479,36 @@ Kerro mitä mietit! ✨`;
         setInputText(continueMessage);
         break;
         
+      case 'edit-task-prompt':
+        if (action.data.taskId) {
+          setInputText(`Muokkaa tehtävää ${action.data.taskId}: `);
+        }
+        break;
+        
+      case 'show-all-tasks':
+      case 'show-team-tasks':
+        const allTasksMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: await handleTaskCommand('näytä tehtävät', activeTab, currentUser),
+          timestamp: new Date(),
+          messageType: 'task-list'
+        };
+        setMessages(prev => [...prev, allTasksMessage]);
+        break;
+        
+      case 'show-progress-stats':
+        const overview = taskService.getTeamTasksOverview();
+        const progressMessage = {
+          id: Date.now(),
+          type: 'ai',
+          content: `📊 **Tiimin edistymistilastot:**\n\n• 📋 Tehtäviä yhteensä: ${overview.total}\n• 🔄 Aktiivisia: ${overview.active}\n• ⏳ Odottavia: ${overview.pending}\n• ✅ Valmiita: ${overview.completed}\n• 🔴 Kiireellisiä: ${overview.highPriority}\n• 📈 Keskimääräinen edistyminen: ${overview.averageCompletion}%\n\n🚀 **Tiimi etenee hyvin kohti €1M tavoitetta!**`,
+          timestamp: new Date(),
+          messageType: 'progress-stats'
+        };
+        setMessages(prev => [...prev, progressMessage]);
+        break;
+        
       default:
         console.log('Unknown action:', action.action);
     }
@@ -329,11 +565,31 @@ Kerro mitä mietit! ✨`;
         return `🌟 **Päivitetään superpowerisi!**\n\nKerro uudet tai päivitetyt taidot ja vahvuudet:\n\n**Esimerkki:**\n"Olen hyvä projektinhallinnassa, tiimin johtamisessa ja strategisessa suunnittelussa"`;
       }
       
-      // Check for task-related commands
+      // Check for all task-related commands
       const taskCommands = ['näytä tehtävät', 'show tasks', 'tehtävät', 'tasks', 'mitä tehtäviä', 'aktiiviset tehtävät'];
+      const createCommands = ['luo tehtävä', 'create task', 'lisää tehtävä', 'uusi tehtävä'];
+      const editCommands = ['muokkaa tehtävä', 'päivitä tehtävä', 'muuta tehtävä', 'edit task'];
+      const assignCommands = ['anna tehtävä', 'delegoi', 'assign task', 'give task'];
+      const completeCommands = ['merkitse valmis', 'tehtävä valmis', 'complete task', 'done'];
       
       if (taskCommands.some(cmd => lowerInput.includes(cmd))) {
         return await handleTaskCommand(input, context, user);
+      }
+      
+      if (createCommands.some(cmd => lowerInput.includes(cmd))) {
+        return await handleTaskCreation(input, context, user);
+      }
+      
+      if (editCommands.some(cmd => lowerInput.includes(cmd))) {
+        return await handleTaskEdit(input, context, user);
+      }
+      
+      if (assignCommands.some(cmd => lowerInput.includes(cmd))) {
+        return await handleTaskAssignment(input, context, user);
+      }
+      
+      if (completeCommands.some(cmd => lowerInput.includes(cmd))) {
+        return await handleTaskCompletion(input, context, user);
       }
       
       // Use real Claude API
