@@ -3,6 +3,7 @@
  * Adapted from newapp frontend authService with diamondmanager app context
  */
 
+// Use the same Railway auth-service URL as the working frontend
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://newapp-backend-production.up.railway.app';
 
 class AuthService {
@@ -29,6 +30,7 @@ class AuthService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'x-app-id': 'diamondmanager' // Critical for multi-app authentication
         },
         body: JSON.stringify(credentials)
@@ -36,9 +38,15 @@ class AuthService {
 
       console.log('📡 Response status:', response.status);
       console.log('📡 Response headers:', [...response.headers.entries()]);
+      console.log('📡 Content-Type:', response.headers.get('content-type'));
       
       const responseText = await response.text();
       console.log('📄 Response text:', responseText.substring(0, 200));
+      
+      // Check if response is HTML instead of JSON
+      if (responseText.trim().startsWith('<!doctype') || responseText.trim().startsWith('<html')) {
+        throw new Error('Server returned HTML instead of JSON. The API endpoint may not be available.');
+      }
       
       const data = JSON.parse(responseText);
 
