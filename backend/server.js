@@ -16,8 +16,12 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'https://diamondmanager-production.up.railway.app',
+    'https://diamondmanager-frontend.up.railway.app',
     process.env.FRONTEND_URL
-  ].filter(Boolean)
+  ].filter(Boolean),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '10mb' }));
 
@@ -34,6 +38,10 @@ app.post('/api/ai/chat', async (req, res) => {
 
     // Use the API key from environment
     const apiKey = process.env.CLAUDE_API_KEY;
+    
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Claude API key not configured' });
+    }
     
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model,
