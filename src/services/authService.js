@@ -3,8 +3,8 @@
  * Adapted from newapp frontend authService with diamondmanager app context
  */
 
-// Try Railway internal DNS to avoid routing conflicts
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://newapp-backend.railway.internal';
+// Use the same pattern as working frontend - prefer REACT_APP_AUTH_SERVICE_URL like the working frontend
+const API_BASE_URL = process.env.REACT_APP_AUTH_SERVICE_URL || process.env.REACT_APP_API_BASE_URL || 'https://newapp-backend-production.up.railway.app';
 
 class AuthService {
   constructor() {

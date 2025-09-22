@@ -50,7 +50,7 @@ const Login = ({ onLogin }) => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-white font-poppins font-medium mb-2">
-                Email
+                Sähköposti
               </label>
               <input
                 type="email"
@@ -66,7 +66,7 @@ const Login = ({ onLogin }) => {
 
             <div>
               <label htmlFor="password" className="block text-white font-poppins font-medium mb-2">
-                Password
+                Salasana
               </label>
               <input
                 type="password"
@@ -98,10 +98,10 @@ const Login = ({ onLogin }) => {
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  <span>Signing in...</span>
+                  <span>Kirjaudutaan...</span>
                 </div>
               ) : (
-                'Sign In'
+                'Kirjaudu sisään'
               )}
             </button>
           </form>

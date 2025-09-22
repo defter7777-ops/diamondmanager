@@ -42,7 +42,7 @@ export const PROFESSIONAL_TRIGGERS = {
   // Onboarding Journey
   firstLogin: {
     id: 'first_login',
-    message: "Welcome to Diamond Makers! 🎉 Let's discover how your unique skills contribute to our €1M goal. Ready to start your superpower assessment?",
+    message: "Tervetuloa Diamond Makersiin! 🎉 Selvitetään kuinka ainutlaatuiset taitosi edistävät miljoonan euron tavoitettamme. Oletko valmis aloittamaan supervoimiesi arvioinnin?",
     action: 'startSkillsAssessment',
     diamonds: 5,
     category: 'BLUE'
@@ -50,7 +50,7 @@ export const PROFESSIONAL_TRIGGERS = {
 
   skillsCompleted: {
     id: 'skills_completed',
-    message: "Excellent! 💎 Your skills profile shows you're strongest in {topSkill}. Let's find tasks that match your superpower.",
+    message: "Erinomaista! 💎 Taitoprofiilisi osoittaa vahvuutesi olevan {topSkill}. Etsitään tehtäviä jotka sopivat supervoimallesi.",
     action: 'suggestOptimalTasks',
     diamonds: 10,
     category: 'GREEN'
@@ -58,7 +58,7 @@ export const PROFESSIONAL_TRIGGERS = {
 
   firstContribution: {
     id: 'first_contribution',
-    message: "🚀 Your first contribution shipped! That {contributionType} moved us closer to our revenue goals. You're officially making an impact!",
+    message: "🚀 Ensimmäinen panoksesi on toimitettu! Tuo {contributionType} vei meitä lähemmäksi tulotavoitteitamme. Teet virallisesti vaikutusta!",
     action: 'celebrateImpact',
     diamonds: 15,
     category: 'GOLD'
