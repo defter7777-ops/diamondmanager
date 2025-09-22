@@ -3,7 +3,7 @@
  * Provides intelligent task analysis, goal alignment, and personal productivity optimization
  */
 
-import { TEAM_PROFILES, getTeamMemberProfile, getTeamSuperpowers } from '../data/teamProfiles';
+import { getTeamMemberProfile, getTeamSuperpowers } from '../data/teamProfiles';
 import profileService from './profileService';
 
 class AIService {
