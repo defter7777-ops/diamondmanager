@@ -5,7 +5,7 @@ import './index.css';
 // Components
 import LoadingSpinner from './components/LoadingSpinner';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import ChatInterface from './components/ChatInterface';
 
 // Services
 import { authService } from './services/authService';
@@ -104,12 +104,13 @@ function App() {
             </motion.div>
           ) : (
             <motion.div
-              key="dashboard"
+              key="chat"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
+              className="min-h-screen"
             >
-              <Dashboard 
+              <ChatInterface 
                 currentUser={currentUser} 
                 onLogout={handleLogout} 
               />
