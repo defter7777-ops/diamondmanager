@@ -33,7 +33,7 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     // Use the API key from environment
-    const apiKey = process.env.CLAUDE_API_KEY || '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';
+    const apiKey = process.env.CLAUDE_API_KEY;
     
     const response = await axios.post('https://api.anthropic.com/v1/messages', {
       model,
