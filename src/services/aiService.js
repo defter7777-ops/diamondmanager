@@ -4,6 +4,7 @@
  */
 
 import { TEAM_PROFILES, getTeamMemberProfile, getTeamSuperpowers } from '../data/teamProfiles';
+import profileService from './profileService';
 
 class AIService {
   constructor() {
@@ -27,26 +28,30 @@ class AIService {
           Olet DiamondCoach AI, Diamond Makers -yrityksen tekoälyavustaja. Puhut suomea ja tunnet yrityksen teknisen tilanteen syvällisesti.
           
           DIAMOND MAKERS YRITYKSEN KONTEKSTI:
-          - Tavoite: €1M vuositulot SaaS-ratkaisujen kautta
-          - Tiimi: Tommi (CTO), Pete (Lead Dev), Janne (Design - nyt aktiivinen Kurkipotku kehityksessä!), Mikko (Finance), Juhani (Sales)
-          - TEKNINEN ARKKITEHTUURI: 5 mikropalvelua (auth, user, team, challenge, feedback) + Railway Cloud
-          - ✅ SAAVUTUKSIA: Multi-app authentication system käytössä, complete data isolation
-          - KEHITYSTYÖKALU: Claude Code AI-avusteinen workflow + Diamond Coach testing
+          - PÄÄTAVOITE: €1,000,000 vuositulot SaaS-ratkaisujen kautta
+          - Tiimi: Tommi (CTO), Pete (Lead Dev), Janne (Design), Mikko (Finance), Juhani (Sales)
+          - TEKNINEN ARKKITEHTUURI: 5 mikropalvelua + Railway Cloud
+          - ✅ SAAVUTUKSIA: Multi-app authentication, complete data isolation
+          - KEHITYSTYÖKALU: Claude Code AI-avusteinen workflow
           
-          🏆 PRIORITEETTIJÄRJESTYS (KRIITTINEN):
-          1. **KURKIPOTKU.COM** (newapp) - NRO 1 PRIORITEETTI koko yritykselle
-             • Jalkapallo-alusta production-tilassa
-             • Janne nyt aktiivisesti mukana UX/UI kehityksessä
-             • Kaikki kehitys dokumentoitava ja monitoroitava tarkasti
-             • Diamond Coach logiikka testataan tässä projektissa
+          🎯 STRATEGISET PROJEKTIT:
+          1. **KURKIPOTKU.COM** - Jalkapallo-alusta (production)
+             • SaaS-tuote kehityksessä
+             • Kaupallistamispotentiaali: Korkea
+             • Status: Aktiivinen kehitys
           
-          2. **DIAMONDMANAGER** - Kaupallinen potentiaali (sinä olet tässä!)
-             • AI-pohjainen tiimityökalu kehitteillä
-             • MERKITTÄVÄ kaupallistamispotentiaali SaaS-tuotteena
-             • Claude integration proof-of-concept tälle markkinalle
+          2. **DIAMONDMANAGER** - AI-pohjainen tiimityökalu
+             • MERKITTÄVÄ kaupallistamispotentiaali
+             • Claude integration proof-of-concept
+             • Status: Käytössä sisäisesti
           
-          3. DiamondShift: Farmastic Oy asiakasprojekti
-          4. Banz.Ai: Live-soccer sovellukset (suunnittelu)
+          3. **DiamondShift** - Performance platform (Farmastic Oy)
+             • Asiakasprojekti tuotannossa
+             • Revenue stream: Aktiivinen
+          
+          4. **Banz.Ai** - Live-soccer sovellukset
+             • Suunnitteluvaihe
+             • Potentiaalinen skaalautuvuus: Korkea
           
           TEKNINEN TILANNE (Sept 2025):
           • MongoDB Atlas: App-scoped collections (users, users_diamondshift, users_diamondmanager)
@@ -55,11 +60,12 @@ class AIService {
           • AI Workflow: TASK.md system + Claude Code assistant
           
           TEHTÄVÄSI:
-          1. **KURKIPOTKU.COM ENSISIJAISESTI** - Priorisoi kaikki tehtävät Kurkipotku-kehityksen tukemiseksi
-          2. Monitoroi ja dokumentoi Kurkipotku-kehitystä (Janne + tiimi yhteistyö)
-          3. Testaa ja kehitä Diamond Coach -logiikkaa Kurkipotku-kontekstissa
-          4. Arvioi DiamondManager SaaS-potentiaalia ja kaupallistamismahdollisuuksia
-          5. Ehdota tapoja hyödyntää mikropalveluarkkitehtuuria molempien tuotteiden skaalaamisen
+          1. **TAVOITTEIDEN SAAVUTTAMINEN** - Priorisoi tehtäviä €1M tavoitteen mukaisesti
+          2. **AI-AVUSTEISTEN TYÖMENETELMIEN KEHITYS** - Ehdota tehokkaita AI-pohjaisia työkaluja ja prosesseja
+          3. Analysoi ja ehdota parhaita strategioita SaaS-tulojen kasvattamiseksi
+          4. Tue tiimin jäseniä heidän vahvuuksiensa mukaisissa tehtävissä
+          5. Optimoi projektien välisiä resursseja ja työnjakoa
+          6. Seuraa ja raportoi edistymistä strategisten tavoitteiden osalta
         `,
         
         omat: `
@@ -286,9 +292,12 @@ class AIService {
   }
 
   /**
-   * Get user profile (based on real Diamond Makers team profiles)
+   * Get user profile (combines team profiles with personal superpowers)
    */
   async getUserProfile(userId) {
+    // Get personal superpowers from profileService
+    const personalProfile = profileService.getUserProfile(userId);
+    
     // Try to get real team member profile
     const teamProfile = getTeamMemberProfile(userId || 'pete');
     
@@ -298,30 +307,35 @@ class AIService {
         role: teamProfile.role,
         title: teamProfile.title,
         email: teamProfile.email,
-        superpowers: teamProfile.superpowers,
+        superpowers: personalProfile?.superpowers || teamProfile.superpowers,
+        personalSuperpowers: personalProfile?.superpowers || [],
+        teamSuperpowers: teamProfile.superpowers,
         workingPatterns: {
           peakHours: teamProfile.workingStyle.peakHours,
           preferences: teamProfile.workingStyle.preferences,
-          communication: teamProfile.workingStyle.communication
+          communication: teamProfile.workingStyle.communication,
+          personalStyle: personalProfile?.workingStyle
         },
         personalGoals: teamProfile.personalGoals,
         expertise: teamProfile.expertise,
         currentFocus: teamProfile.currentFocus,
-        fullProfile: teamProfile // Include complete profile for AI context
+        fullProfile: teamProfile, // Include complete profile for AI context
+        hasPersonalSuperpowers: !!personalProfile?.superpowers
       };
     }
     
-    // Fallback to Pete if no match
+    // For non-team members or when team profile not found
     return {
-      firstName: 'Pete',
-      role: 'Lead Developer',
+      firstName: personalProfile?.firstName || personalProfile?.name || 'User',
+      role: 'Team Member',
+      superpowers: personalProfile?.superpowers || [],
+      personalSuperpowers: personalProfile?.superpowers || [],
       workingPatterns: {
-        peakHours: '9-11 AM, 2-4 PM',
-        preferences: 'Deep work blocks, AI-assisted development, Railway deployments'
+        peakHours: 'Not defined',
+        preferences: personalProfile?.workingStyle || 'Not defined'
       },
-      personalGoals: TEAM_PROFILES.pete.personalGoals,
-      superpowers: TEAM_PROFILES.pete.superpowers,
-      currentFocus: TEAM_PROFILES.pete.currentFocus
+      personalGoals: [],
+      hasPersonalSuperpowers: !!personalProfile?.superpowers
     };
   }
 
@@ -408,11 +422,11 @@ class AIService {
     return {
       teamSize: 5,
       teamMembers: {
-        'Tommi': 'CEO & CTO - Architecture & Strategy',
-        'Pete': 'Lead Developer - Backend & Systems',
-        'Janne': 'Designer - UX/UI (aktiivinen Kurkipotku-kehityksessä)',
-        'Mikko': 'Finance - Business Strategy',
-        'Juhani': 'Sales - Customer Relations'
+        'Tommi': 'CEO & CTO - AI-Assisted Development & Strategy',
+        'Pete': 'Content Provider - Customer Relations, Testing & Business Development', 
+        'Janne': 'Designer - UX/UI & User Experience',
+        'Mikko': 'Finance - Business Strategy & Analytics',
+        'Juhani': 'Sales - Customer Relations & Growth'
       },
       teamSuperpowers: {
         'Tommi': teamSuperpowers.tommi,

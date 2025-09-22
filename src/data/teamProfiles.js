@@ -64,61 +64,60 @@ export const TEAM_PROFILES = {
 
   'pete': {
     name: 'Pete',
-    role: 'Lead Developer',
-    title: 'Lead Developer & Technical Implementation',
+    role: 'Content Provider & Business Development',
+    title: 'Content Provider, Customer Relations & Business Development',
     email: 'pete@diamondmakers.com',
     
     superpowers: [
-      '⚙️ Backend Architecture & Implementation Mastery',
-      '🔒 Authentication Systems & Security Expert',
-      '🚀 Railway Deployment & DevOps Wizard',
-      '🏗️ Mikropalvelujen Integrointispesialisti',
-      '🧠 AI-Assisted Development Workflow Pioneer',
-      '📊 Database Optimization & Performance Tuning'
+      '📝 Content Creation & Communication Excellence',
+      '🤝 Customer Relations & Support Expert',
+      '🧪 Product Testing & Quality Assurance',
+      '💼 B2B Sales & Organizational Relations',
+      '📈 Real-world Business Development',
+      '🔍 Market Analysis & Customer Insights'
     ],
     
     expertise: {
-      technical: [
-        '5 mikropalvelun arkkitehtuuri (auth, user, team, challenge, feedback)',
-        'Multi-tenant JWT authentication implementation',
-        'MongoDB Atlas optimointi ja app-scoped collections',
-        'Railway Cloud deployment automation',
-        'CORS configuration ja service-to-service communication',
-        'WSL2 + Windows development environment'
+      content: [
+        'SaaS-tuotteiden sisällöntuotanto',
+        'Asiakasviestintä ja dokumentaatio',
+        'Tuotekuvaukset ja markkinointimateriaalit',
+        'Käyttöohjeiden ja tutoriaalien luominen',
+        'Blogi- ja some-sisältöjen suunnittelu'
       ],
-      development: [
-        'Claude Code workflow maximointi',
-        'TASK.md system käyttö ja optimointi',
-        'Real data testing metodologia',
-        'curl.exe API testing strategies',
-        'Documentation-driven development'
+      business: [
+        'B2B-myynti ja asiakassuhteet',
+        'Organisaatioiden kanssa neuvottelu',
+        'Liiketoimintakehitys ja kasvustrategiat',
+        'Markkinatutkimus ja kilpailija-analyysi',
+        'Asiakaspalautteiden analysointi'
       ],
-      integration: [
-        'Multi-app data isolation patterns',
-        'Service mesh communication',
-        'API gateway configuration',
+      testing: [
+        'SaaS-tuotteiden käytettävyystestaus',
+        'Asiakaskokemuksen laadunvarmistus',
+        'Tuotteen toiminnallisuuden validointi',
         'Database migration strategies'
       ]
     },
     
     currentFocus: [
-      'Kurkipotku.com backend tuki ja optimointi',
-      'DiamondManager Claude integration perfektiointi',
-      'Multi-app authentication system maintenance',
-      'DiamondShift (Farmastic) backend development'
+      'SaaS-tuotteiden sisältömarkkinointi',
+      'Asiakassuhteiden kehittäminen ja ylläpito',
+      'Tuotteiden käytettävyys- ja toiminnallisuustestaus',
+      'B2B-myynnin kasvattaminen organisaatioille'
     ],
     
     workingStyle: {
-      peakHours: '9-11 AM (deep focus), 2-4 PM (collaboration)',
-      preferences: 'Deep work blocks, AI-assisted coding, comprehensive testing',
-      communication: 'Technical precision, solution-focused, dokumentointipainotteinen'
+      peakHours: '8-10 AM (content creation), 1-4 PM (customer relations)',
+      preferences: 'Asiakaslähtöisyys, selkeä viestintä, laatuun keskittyminen',
+      communication: 'Empaattinen, ratkaisukeskeinen, asiakaspalveluhenkinen'
     },
     
     personalGoals: [
-      'Optimoida mikropalveluarkkitehtuuri asiakasprojekteille',
-      'Kehittää Claude Code workflow tehokkaimmaksi mahdolliseksi',
-      'Tukea Kurkipotku.com menestystä teknisellä excellencellä',
-      'Rakentaa skaalautuvia SaaS-ratkaisuja Diamond Makers portfolioon'
+      'Kasvattaa SaaS-tuotteiden myyntiä organisaatioille',
+      'Kehittää Diamond Makers -brändin tunnettavuutta',
+      'Luoda tehokas asiakaspalaute- ja tukijärjestelmä',
+      'Tukea €1M tavoitteen saavuttamista myynnin kautta'
     ]
   },
 
