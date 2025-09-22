@@ -7,8 +7,8 @@ import { TEAM_PROFILES, getTeamMemberProfile, getTeamSuperpowers } from '../data
 
 class AIService {
   constructor() {
-    this.apiKey = process.env.REACT_APP_CLAUDE_API_KEY || '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';
-    this.baseUrl = 'https://api.anthropic.com/v1';
+    // Use backend proxy instead of direct API calls
+    this.baseUrl = process.env.REACT_APP_DIAMONDMANAGER_BACKEND_URL || 'https://diamondmanager-backend-production.up.railway.app';
     this.model = 'claude-3-5-sonnet-20241022';
   }
 
@@ -157,6 +157,20 @@ class AIService {
           ]
         };
       }
+
+      // Check if this message contains potential tasks
+      console.log('🔍 Checking for potential tasks...');
+      const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
+      if (taskDetection.hasTasks) {
+        console.log('📋 Tasks detected, asking for user confirmation');
+        return {
+          type: 'task-confirmation',
+          content: taskDetection.confirmationMessage,
+          timestamp: new Date(),
+          actions: taskDetection.actions,
+          detectedTasks: taskDetection.tasks
+        };
+      }
       
       console.log('🤖 Sending message to Claude API...');
       const context = await this.buildClaudeContext(userId, activeTab);
@@ -173,12 +187,10 @@ class AIService {
         }
       ];
 
-      const response = await fetch(this.baseUrl + '/messages', {
+      const response = await fetch(this.baseUrl + '/ai/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-          'anthropic-version': '2023-06-01'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: this.model,
@@ -438,6 +450,194 @@ class AIService {
         'Comprehensive documentation system'
       ]
     };
+  }
+
+  /**
+   * Detect potential tasks in user message
+   */
+  async detectPotentialTasks(message, userId, activeTab) {
+    const normalizedMessage = message.toLowerCase();
+    
+    // Task indicators (Finnish patterns)
+    const taskIndicators = [
+      'pitää tehdä', 'täytyy tehdä', 'tee', 'toteuta', 'luo', 'rakenna', 'korjaa',
+      'suunnittele', 'analysoi', 'tutki', 'selvitä', 'ota yhteyttä', 'kirjoita',
+      'päivitä', 'lisää', 'poista', 'muuta', 'kehitä', 'testaa', 'deploy',
+      'valmistele', 'järjestä', 'koordinoi', 'review', 'tarkista'
+    ];
+    
+    // Time indicators
+    const timeIndicators = [
+      'tänään', 'huomenna', 'tällä viikolla', 'ensi viikolla', 'deadlinena',
+      'kiireellinen', 'pian', 'ennen', 'jälkeen', 'mennessä'
+    ];
+    
+    // Check for task patterns
+    const hasTaskWords = taskIndicators.some(indicator => 
+      normalizedMessage.includes(indicator)
+    );
+    
+    const hasTimeReference = timeIndicators.some(indicator => 
+      normalizedMessage.includes(indicator)
+    );
+    
+    // Strong task indicators
+    const strongTaskPatterns = [
+      /pitää (tehdä|toteuttaa|rakentaa|korjata|päivittää)/g,
+      /täytyy (tehdä|hoitaa|saada)/g,
+      /voitaisiinko (tehdä|toteuttaa|lisätä)/g,
+      /ehdotan että (tehdään|toteutetaan|luodaan)/g,
+      /seuraavaksi (teen|teemme|toteutan)/g
+    ];
+    
+    const hasStrongPattern = strongTaskPatterns.some(pattern => 
+      pattern.test(normalizedMessage)
+    );
+    
+    if (hasTaskWords || hasTimeReference || hasStrongPattern) {
+      // Extract potential tasks using simple text analysis
+      const tasks = await this.extractTasksFromMessage(message, userId, activeTab);
+      
+      if (tasks.length > 0) {
+        return {
+          hasTasks: true,
+          tasks: tasks,
+          confirmationMessage: this.generateTaskConfirmationMessage(tasks, message),
+          actions: [
+            {
+              emoji: '✅',
+              label: 'Kyllä, luo tehtävä(t)',
+              action: 'create-tasks',
+              data: { tasks: tasks }
+            },
+            {
+              emoji: '❌', 
+              label: 'Ei, jatka keskustelua',
+              action: 'continue-conversation',
+              data: { originalMessage: message }
+            },
+            {
+              emoji: '✏️',
+              label: 'Muokkaa ensin',
+              action: 'edit-tasks',
+              data: { tasks: tasks }
+            }
+          ]
+        };
+      }
+    }
+    
+    return { hasTasks: false };
+  }
+
+  /**
+   * Extract tasks from user message
+   */
+  async extractTasksFromMessage(message, userId, activeTab) {
+    const sentences = message.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const tasks = [];
+    
+    const taskIndicators = [
+      'pitää tehdä', 'täytyy tehdä', 'tee', 'toteuta', 'luo', 'rakenna', 'korjaa',
+      'suunnittele', 'analysoi', 'tutki', 'selvitä', 'ota yhteyttä', 'kirjoita',
+      'päivitä', 'lisää', 'poista', 'muuta', 'kehitä', 'testaa'
+    ];
+    
+    for (let sentence of sentences) {
+      const normalizedSentence = sentence.toLowerCase().trim();
+      
+      if (taskIndicators.some(indicator => normalizedSentence.includes(indicator))) {
+        // Estimate strategic value based on keywords
+        let strategicValue = 5; // default
+        
+        if (normalizedSentence.includes('kurkipotku')) strategicValue = 9;
+        else if (normalizedSentence.includes('asiakas') || normalizedSentence.includes('client')) strategicValue = 8;
+        else if (normalizedSentence.includes('urgent') || normalizedSentence.includes('kiire')) strategicValue = 7;
+        else if (normalizedSentence.includes('bug') || normalizedSentence.includes('korjaa')) strategicValue = 6;
+        
+        // Extract time context
+        let timeContext = 'Ei määritelty';
+        if (normalizedSentence.includes('tänään')) timeContext = 'Tänään';
+        else if (normalizedSentence.includes('huomenna')) timeContext = 'Huomenna';
+        else if (normalizedSentence.includes('tällä viikolla')) timeContext = 'Tällä viikolla';
+        else if (normalizedSentence.includes('ensi viikolla')) timeContext = 'Ensi viikolla';
+        
+        tasks.push({
+          title: this.cleanTaskTitle(sentence.trim()),
+          description: sentence.trim(),
+          strategicValue: strategicValue,
+          estimatedTime: this.estimateTaskTime(sentence),
+          timeContext: timeContext,
+          category: this.categorizeTask(sentence, activeTab),
+          source: 'ai-detected'
+        });
+      }
+    }
+    
+    return tasks;
+  }
+
+  /**
+   * Generate confirmation message for detected tasks
+   */
+  generateTaskConfirmationMessage(tasks, originalMessage) {
+    let message = `🤖 Tunnistin viestistäsi ${tasks.length} mahdollista tehtävää:\n\n`;
+    
+    tasks.forEach((task, index) => {
+      message += `**${index + 1}. ${task.title}**\n`;
+      message += `   • Strateginen arvo: ⭐ ${task.strategicValue}/10\n`;
+      message += `   • Arvioitu aika: ⏱️ ${task.estimatedTime}\n`;
+      message += `   • Aikataulussa: 📅 ${task.timeContext}\n`;
+      message += `   • Kategoria: 📂 ${task.category}\n\n`;
+    });
+    
+    message += `Haluatko että luon näistä tehtäviä Diamond Makers projekteihin? 🎯`;
+    
+    return message;
+  }
+
+  /**
+   * Helper methods for task processing
+   */
+  cleanTaskTitle(sentence) {
+    // Remove task indicators and clean up the title
+    const cleanSentence = sentence
+      .replace(/^(pitää tehdä|täytyy tehdä|tee|toteuta|luo|rakenna|korjaa|suunnittele|analysoi)/gi, '')
+      .replace(/^\s*(että\s*)?/gi, '')
+      .trim();
+    
+    // Capitalize first letter
+    return cleanSentence.charAt(0).toUpperCase() + cleanSentence.slice(1);
+  }
+
+  estimateTaskTime(sentence) {
+    const normalizedSentence = sentence.toLowerCase();
+    
+    if (normalizedSentence.includes('pika') || normalizedSentence.includes('nopea')) return '30 min';
+    if (normalizedSentence.includes('review') || normalizedSentence.includes('tarkista')) return '1 tunti';
+    if (normalizedSentence.includes('suunnittele') || normalizedSentence.includes('analysoi')) return '2-4 tuntia';
+    if (normalizedSentence.includes('toteuta') || normalizedSentence.includes('kehitä')) return '4-8 tuntia';
+    if (normalizedSentence.includes('luo') || normalizedSentence.includes('rakenna')) return '1-2 päivää';
+    
+    return '2-3 tuntia';
+  }
+
+  categorizeTask(sentence, activeTab) {
+    const normalizedSentence = sentence.toLowerCase();
+    
+    if (normalizedSentence.includes('kurkipotku')) return 'Kurkipotku.com (PRIORITEETTI #1)';
+    if (normalizedSentence.includes('diamondmanager')) return 'DiamondManager';
+    if (normalizedSentence.includes('diamondshift')) return 'DiamondShift (Farmastic)';
+    if (normalizedSentence.includes('ui') || normalizedSentence.includes('design')) return 'UX/UI Design';
+    if (normalizedSentence.includes('backend') || normalizedSentence.includes('api')) return 'Backend Development';
+    if (normalizedSentence.includes('testi') || normalizedSentence.includes('bug')) return 'Testing & QA';
+    
+    // Default based on active tab
+    if (activeTab === 'diamondmakers') return 'Yrityksen strategiset tehtävät';
+    if (activeTab === 'omat') return 'Henkilökohtaiset tehtävät';
+    if (activeTab === 'tavoitteet') return 'Tavoitteiden seuranta';
+    
+    return 'Yleinen';
   }
 
   /**

@@ -7,12 +7,28 @@ const ChatInterface = ({ currentUser, onLogout }) => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('diamondmakers'); // diamondmakers, omat, tavoitteet
+  const [activeTasks, setActiveTasks] = useState([]);
+  const [showTaskPanel, setShowTaskPanel] = useState(false);
   const chatEndRef = useRef(null);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Load active tasks
+  useEffect(() => {
+    const loadActiveTasks = async () => {
+      try {
+        const tasks = await aiService.getUserTasks(currentUser?.id || 'pete');
+        setActiveTasks(tasks.filter(task => task.status === 'active' || task.status === 'pending'));
+      } catch (error) {
+        console.error('Failed to load active tasks:', error);
+      }
+    };
+    
+    loadActiveTasks();
+  }, [currentUser]);
 
   // Initialize with personalized welcome message
   useEffect(() => {
@@ -162,6 +178,18 @@ Olen Claude-pohjainen AI joka tuntee Diamond Makers -ekosysteemin syvällisesti.
                 ))}
               </div>
               
+              {/* Active Tasks Toggle */}
+              <button
+                onClick={() => setShowTaskPanel(!showTaskPanel)}
+                className="px-3 py-1 text-sm rounded-md transition-all flex items-center space-x-1 hover:bg-white/5"
+                title="Näytä aktiiviset tehtävät"
+              >
+                <span>📋</span>
+                <span className="text-white/70">{activeTasks.length}</span>
+                {showTaskPanel && <span className="text-white/50">▲</span>}
+                {!showTaskPanel && <span className="text-white/50">▼</span>}
+              </button>
+              
               <div className="text-white/70 text-sm">
                 {currentUser?.firstName}
               </div>
@@ -175,6 +203,78 @@ Olen Claude-pohjainen AI joka tuntee Diamond Makers -ekosysteemin syvällisesti.
           </div>
         </div>
       </div>
+
+      {/* Active Tasks Panel - Collapsible */}
+      {showTaskPanel && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="flex-shrink-0 border-b border-white/10 bg-black/10"
+        >
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
+              <span>📋</span>
+              <span>Aktiiviset tehtävät ({activeTasks.length})</span>
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {activeTasks.map((task) => {
+                const completionRate = task.status === 'completed' ? 100 : 
+                                      task.status === 'active' ? 60 : 20;
+                const priorityColor = task.priority === 'high' ? 'text-red-400' : 
+                                    task.priority === 'medium' ? 'text-yellow-400' : 'text-green-400';
+                
+                return (
+                  <div key={task.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="text-sm font-medium text-white line-clamp-2">{task.title}</h4>
+                      <span className={`text-xs ${priorityColor} uppercase font-bold`}>
+                        {task.priority}
+                      </span>
+                    </div>
+                    
+                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{task.description}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-white/50">Eteneminen</span>
+                        <span className="text-xs text-white/70">{completionRate}%</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${completionRate}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        task.status === 'active' ? 'bg-blue-500/20 text-blue-300' : 
+                        task.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-green-500/20 text-green-300'
+                      }`}>
+                        {task.status === 'active' ? 'Aktiivinen' : 
+                         task.status === 'pending' ? 'Odottaa' : 'Valmis'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {activeTasks.length === 0 && (
+                <div className="col-span-full text-center py-8 text-white/40">
+                  <span className="text-4xl block mb-2">🎉</span>
+                  <p>Ei aktiivisia tehtäviä tällä hetkellä!</p>
+                  <p className="text-sm mt-1">Voit luoda uusia tehtäviä keskustelemalla AI:n kanssa.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Chat Messages - Scrollable */}
       <div className="flex-1 overflow-y-auto">
@@ -242,15 +342,26 @@ Olen Claude-pohjainen AI joka tuntee Diamond Makers -ekosysteemin syvällisesti.
         <div className="max-w-4xl mx-auto px-6 py-4">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <div className="flex-1 relative">
-              <input
-                type="text"
+              <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Kerro mitä mietit tai kysy neuvoa... (Esim: 'Missä Janne on hyvä?')"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-blue-400/50 focus:bg-white/15 pr-16"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-blue-400/50 focus:bg-white/15 pr-16 resize-none overflow-hidden transition-all duration-200"
                 disabled={isLoading}
+                rows={inputText.split('\n').length || 1}
+                style={{
+                  minHeight: '48px',
+                  maxHeight: '200px',
+                  height: Math.max(48, Math.min(200, inputText.split('\n').length * 24 + 24))
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
               />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/30 text-xs">
+              <div className="absolute right-3 top-3 text-white/30 text-xs">
                 {activeTab === 'diamondmakers' ? '💎' : activeTab === 'omat' ? '👤' : '🎯'}
               </div>
             </div>

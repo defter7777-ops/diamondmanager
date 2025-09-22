@@ -16,6 +16,8 @@
     "REACT_APP_AUTH_SERVICE_URL": "https://newapp-backend-production.up.railway.app",
     "REACT_APP_USER_SERVICE_URL": "https://user-service-production-840d.up.railway.app",
     "REACT_APP_TEAM_SERVICE_URL": "https://team-service-production.up.railway.app",
-    "REACT_APP_FEEDBACK_SERVICE_URL": "https://feedback-service-production-555d.up.railway.app"
+    "REACT_APP_FEEDBACK_SERVICE_URL": "https://feedback-service-production-555d.up.railway.app",
+    "REACT_APP_DIAMONDMANAGER_BACKEND_URL": "https://diamondmanager-backend-production.up.railway.app",
+    "REACT_APP_CLAUDE_API_KEY": "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"
   }
 }
