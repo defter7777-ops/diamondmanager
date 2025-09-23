@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import aiService from '../services/aiService';
 import profileService from '../services/profileService';
 import taskService from '../services/taskService';
+import goalsService from '../services/goalsService';
 
 const ChatInterface = ({ currentUser, onLogout }) => {
   const [messages, setMessages] = useState([]);
@@ -10,6 +11,7 @@ const ChatInterface = ({ currentUser, onLogout }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('diamondmakers'); // diamondmakers, omat, tavoitteet
   const [activeTasks, setActiveTasks] = useState([]);
+  const [activeGoals, setActiveGoals] = useState([]);
   const [showTaskPanel, setShowTaskPanel] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [needsSuperpowerOnboarding, setNeedsSuperpowerOnboarding] = useState(false);
@@ -35,6 +37,20 @@ const ChatInterface = ({ currentUser, onLogout }) => {
     
     loadActiveTasks();
   }, [currentUser]);
+
+  // Load active goals
+  useEffect(() => {
+    const loadActiveGoals = () => {
+      try {
+        const goals = goalsService.getAllGoals();
+        setActiveGoals(goals.filter(goal => goal.status === 'active'));
+      } catch (error) {
+        console.error('Failed to load active goals:', error);
+      }
+    };
+    
+    loadActiveGoals();
+  }, []);
 
   // Check for superpower onboarding and initialize welcome message
   useEffect(() => {
@@ -689,14 +705,16 @@ Kerro mitä mietit! ✨`;
                 ))}
               </div>
               
-              {/* Active Tasks Toggle */}
+              {/* Active Tasks/Goals Toggle */}
               <button
                 onClick={() => setShowTaskPanel(!showTaskPanel)}
                 className="px-3 py-1 text-sm rounded-md transition-all flex items-center space-x-1 hover:bg-white/5"
-                title="Näytä aktiiviset tehtävät"
+                title={activeTab === 'tavoitteet' ? 'Näytä tavoitteet' : 'Näytä aktiiviset tehtävät'}
               >
-                <span>📋</span>
-                <span className="text-white/70">{activeTasks.length}</span>
+                <span>{activeTab === 'tavoitteet' ? '🎯' : '📋'}</span>
+                <span className="text-white/70">
+                  {activeTab === 'tavoitteet' ? activeGoals.length : activeTasks.length}
+                </span>
                 {showTaskPanel && <span className="text-white/50">▲</span>}
                 {!showTaskPanel && <span className="text-white/50">▼</span>}
               </button>
@@ -715,7 +733,7 @@ Kerro mitä mietit! ✨`;
         </div>
       </div>
 
-      {/* Active Tasks Panel - Collapsible */}
+      {/* Active Tasks/Goals Panel - Collapsible */}
       {showTaskPanel && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
@@ -725,12 +743,18 @@ Kerro mitä mietit! ✨`;
         >
           <div className="max-w-4xl mx-auto px-6 py-4">
             <h3 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
-              <span>📋</span>
-              <span>Aktiiviset tehtävät ({activeTasks.length})</span>
+              <span>{activeTab === 'tavoitteet' ? '🎯' : '📋'}</span>
+              <span>
+                {activeTab === 'tavoitteet' 
+                  ? `Tavoitteet (${activeGoals.length})` 
+                  : `Aktiiviset tehtävät (${activeTasks.length})`
+                }
+              </span>
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {activeTasks.map((task) => {
+              {/* Tasks View */}
+              {activeTab !== 'tavoitteet' && activeTasks.map((task) => {
                 const completionRate = task.status === 'completed' ? 100 : 
                                       task.status === 'active' ? 60 : 20;
                 const priorityColor = task.priority === 'high' ? 'text-red-400' : 
@@ -782,12 +806,63 @@ Kerro mitä mietit! ✨`;
                   </button>
                 );
               })}
+
+              {/* Goals View */}
+              {activeTab === 'tavoitteet' && activeGoals.map((goal) => {
+                const categoryColor = goal.category === 'revenue' ? 'text-green-400' :
+                                    goal.category === 'products' ? 'text-blue-400' : 'text-purple-400';
+                
+                return (
+                  <div key={goal.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="text-sm font-medium text-white line-clamp-2">{goal.title}</h4>
+                      <span className={`text-xs ${categoryColor} uppercase font-bold`}>
+                        {goal.category}
+                      </span>
+                    </div>
+                    
+                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{goal.description}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-white/50">Edistyminen</span>
+                        <span className="text-xs text-white/70">{goal.progress}%</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2">
+                        <div 
+                          className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${goal.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2 flex justify-between items-center">
+                      <span className="text-xs text-white/50">
+                        {goal.current.toLocaleString()} / {goal.target.toLocaleString()} {goal.unit}
+                      </span>
+                      <span className="text-xs text-white/40">
+                        📅 {goal.deadline}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
               
-              {activeTasks.length === 0 && (
+              {/* Empty States */}
+              {activeTab !== 'tavoitteet' && activeTasks.length === 0 && (
                 <div className="col-span-full text-center py-8 text-white/40">
                   <span className="text-4xl block mb-2">🎉</span>
                   <p>Ei aktiivisia tehtäviä tällä hetkellä!</p>
                   <p className="text-sm mt-1">Voit luoda uusia tehtäviä keskustelemalla AI:n kanssa.</p>
+                </div>
+              )}
+
+              {activeTab === 'tavoitteet' && activeGoals.length === 0 && (
+                <div className="col-span-full text-center py-8 text-white/40">
+                  <span className="text-4xl block mb-2">🎯</span>
+                  <p>Ei aktiivisia tavoitteita tällä hetkellä!</p>
+                  <p className="text-sm mt-1">Voit luoda uusia tavoitteita keskustelemalla AI:n kanssa.</p>
                 </div>
               )}
             </div>
