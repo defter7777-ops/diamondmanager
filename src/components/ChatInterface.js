@@ -661,7 +661,7 @@ Kerro mitä mietit! ✨`;
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header with Logo and User Info */}
       <div className="flex-shrink-0 border-b border-white/10 bg-black/20">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 diamond-shape bg-gradient-to-br from-blue-400 to-purple-600" />
@@ -671,19 +671,26 @@ Kerro mitä mietit! ✨`;
               </div>
             </div>
             
-            {/* Selected Task Indicator */}
+            {/* Selected Task Indicator - Desktop */}
             {selectedTask && (
-              <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-400/30 rounded-md">
+              <div className="hidden md:flex items-center space-x-2 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-400/30">
                 <span className="text-blue-300 text-sm">🎯</span>
-                <span className="text-white text-sm font-medium truncate max-w-xs">
-                  {selectedTask.title}
-                </span>
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="text-blue-300/70 hover:text-blue-300 text-xs ml-1"
-                >
-                  ✕
-                </button>
+                <div className="text-sm">
+                  <div className="font-medium text-white truncate max-w-48">
+                    {selectedTask.title}
+                  </div>
+                  <div className="text-blue-300 text-xs flex items-center space-x-2">
+                    <span>⭐ {selectedTask.strategicValue || 'N/A'}/10</span>
+                    <span>•</span>
+                    <span>📋 {selectedTask.status}</span>
+                    <button
+                      onClick={() => setSelectedTask(null)}
+                      className="text-blue-300/70 hover:text-blue-300 ml-2"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             
@@ -730,6 +737,29 @@ Kerro mitä mietit! ✨`;
               </button>
             </div>
           </div>
+          
+          {/* Mobile task display */}
+          {selectedTask && (
+            <div className="md:hidden mt-3">
+              <div className="flex items-center space-x-2 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-400/30">
+                <span className="text-blue-300 text-sm">🎯</span>
+                <div className="text-sm flex-1">
+                  <div className="font-medium text-white truncate">
+                    {selectedTask.title}
+                  </div>
+                  <div className="text-blue-300 text-xs">
+                    ⭐ {selectedTask.strategicValue || 'N/A'}/10 • 📋 {selectedTask.status}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedTask(null)}
+                  className="text-blue-300/70 hover:text-blue-300"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -872,7 +902,7 @@ Kerro mitä mietit! ✨`;
 
       {/* Chat Messages - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-6 py-6 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
           {messages.map((message) => (
             <motion.div
               key={message.id}
@@ -956,7 +986,7 @@ Kerro mitä mietit! ✨`;
 
       {/* Input Form - Fixed at Bottom */}
       <div className="flex-shrink-0 border-t border-white/10 bg-slate-800/50 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <div className="flex-1 relative">
               <textarea
