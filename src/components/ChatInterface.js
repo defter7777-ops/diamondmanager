@@ -11,6 +11,7 @@ const ChatInterface = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('diamondmakers'); // diamondmakers, omat, tavoitteet
   const [activeTasks, setActiveTasks] = useState([]);
   const [showTaskPanel, setShowTaskPanel] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [needsSuperpowerOnboarding, setNeedsSuperpowerOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState('welcome'); // welcome, superpowers, details, complete
   const chatEndRef = useRef(null);
@@ -592,12 +593,13 @@ Kerro mitä mietit! ✨`;
         return await handleTaskCompletion(input, context, user);
       }
       
-      // Use real Claude API
+      // Use real Claude API with task context
       const response = await aiService.sendMessageToClaude(
         input,
         user?.id || 'demo-user',
         context, // activeTab
-        messages.filter(m => m.type === 'user' || m.type === 'ai').slice(-10) // Last 10 messages for context
+        messages.filter(m => m.type === 'user' || m.type === 'ai').slice(-10), // Last 10 messages for context
+        selectedTask // Pass selected task for context
       );
       
       // Handle different response types
@@ -616,6 +618,21 @@ Kerro mitä mietit! ✨`;
       console.error('❌ AI service error:', error);
       return `Anteeksi, kohtasin teknisen ongelman Claude API:n kanssa. 🔧\n\nVirhe: ${error.message}\n\nTarkista verkkoyhteytesi ja yritä hetken päästä uudelleen.`;
     }
+  };
+
+  // Handle task selection
+  const handleTaskSelect = (task) => {
+    setSelectedTask(task);
+    
+    // Add a system message about task focus
+    const taskFocusMessage = {
+      id: Date.now(),
+      type: 'system',
+      content: `🎯 **Keskitytään tehtävään:** ${task.title}\n\nKuvaus: ${task.description}\nStatus: ${task.status}\nPrioriteetti: ${task.priority}\n\n💡 Voin nyt auttaa sinua tämän tehtävän kanssa. Kysy mitä tahansa liittyen tähän tehtävään!`,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, taskFocusMessage]);
   };
 
   const tabs = [
@@ -637,6 +654,22 @@ Kerro mitä mietit! ✨`;
                 <p className="text-sm text-white/60">Claude-powered team assistant</p>
               </div>
             </div>
+            
+            {/* Selected Task Indicator */}
+            {selectedTask && (
+              <div className="flex items-center space-x-2 px-3 py-1 bg-blue-500/10 border border-blue-400/30 rounded-md">
+                <span className="text-blue-300 text-sm">🎯</span>
+                <span className="text-white text-sm font-medium truncate max-w-xs">
+                  {selectedTask.title}
+                </span>
+                <button
+                  onClick={() => setSelectedTask(null)}
+                  className="text-blue-300/70 hover:text-blue-300 text-xs ml-1"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
             
             <div className="flex items-center space-x-4">
               {/* Tab Navigation - Compact */}
@@ -704,7 +737,15 @@ Kerro mitä mietit! ✨`;
                                     task.priority === 'medium' ? 'text-yellow-400' : 'text-green-400';
                 
                 return (
-                  <div key={task.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <button
+                    key={task.id}
+                    onClick={() => handleTaskSelect(task)}
+                    className={`w-full text-left bg-white/5 hover:bg-white/10 rounded-lg p-3 border transition-all ${
+                      selectedTask?.id === task.id 
+                        ? 'border-blue-400/50 bg-blue-500/10' 
+                        : 'border-white/10 hover:border-white/20'
+                    }`}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="text-sm font-medium text-white line-clamp-2">{task.title}</h4>
                       <span className={`text-xs ${priorityColor} uppercase font-bold`}>
@@ -738,7 +779,7 @@ Kerro mitä mietit! ✨`;
                          task.status === 'pending' ? 'Odottaa' : 'Valmis'}
                       </span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
               

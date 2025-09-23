@@ -16,7 +16,7 @@ class AIService {
   /**
    * Build comprehensive context for Claude based on user and company data
    */
-  async buildClaudeContext(userId, activeTab = 'diamondmakers') {
+  async buildClaudeContext(userId, activeTab = 'diamondmakers', selectedTask = null) {
     try {
       const userProfile = await this.getUserProfile(userId);
       const currentTasks = await this.getUserTasks(userId);
@@ -102,8 +102,22 @@ class AIService {
         `
       };
 
+      // Add task context if a task is selected
+      const taskContext = selectedTask ? `
+        
+        🎯 VALITTU TEHTÄVÄ (FOKUS):
+        • Tehtävä: ${selectedTask.title}
+        • Kuvaus: ${selectedTask.description}
+        • Status: ${selectedTask.status}
+        • Prioriteetti: ${selectedTask.priority}
+        • Vastuuhenkilö: ${selectedTask.assignedTo || 'Ei määritelty'}
+        
+        TÄRKEÄÄ: Käyttäjä on valinnut tämän tehtävän ja haluaa keskittyä siihen. 
+        Anna neuvoja ja apua erityisesti tämän tehtävän eteenpäin viemiseksi.
+        ` : '';
+
       return {
-        systemPrompt: contextByTab[activeTab] + `
+        systemPrompt: contextByTab[activeTab] + taskContext + `
           
           OHJEISTUS:
           1. Vastaa aina suomeksi ja käytä emojeja havainnollistamaan
@@ -141,7 +155,7 @@ class AIService {
   /**
    * Send message to Claude with full context
    */
-  async sendMessageToClaude(userMessage, userId, activeTab = 'diamondmakers', conversationHistory = []) {
+  async sendMessageToClaude(userMessage, userId, activeTab = 'diamondmakers', conversationHistory = [], selectedTask = null) {
     try {
       console.log('🤖 Analyzing message for superpowers inquiry...');
       
@@ -179,7 +193,7 @@ class AIService {
       }
       
       console.log('🤖 Sending message to Claude API...');
-      const context = await this.buildClaudeContext(userId, activeTab);
+      const context = await this.buildClaudeContext(userId, activeTab, selectedTask);
       
       const messages = [
         {
