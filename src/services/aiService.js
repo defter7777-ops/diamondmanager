@@ -5,12 +5,20 @@
 
 import { getTeamMemberProfile, getTeamSuperpowers } from '../data/teamProfiles';
 import profileService from './profileService';
+import ImprovedIntentClassifier from './improvedIntentClassifier';
+import FeatureFlagService from './featureFlagService';
 
 class AIService {
   constructor() {
     // Use backend proxy instead of direct API calls
     this.baseUrl = process.env.REACT_APP_DIAMONDMANAGER_BACKEND_URL || 'https://diamondmanager-backend-production.up.railway.app';
     this.model = 'claude-3-5-sonnet-20241022';
+    
+    // Initialize feature flag service
+    this.featureFlags = new FeatureFlagService();
+    
+    // Initialize improved intent classifier
+    this.intentClassifier = new ImprovedIntentClassifier();
   }
 
   /**
@@ -167,76 +175,82 @@ class AIService {
    */
   async sendMessageToClaude(userMessage, userId, activeTab = 'diamondmakers', conversationHistory = [], selectedTask = null) {
     try {
-      console.log('🤖 Analyzing message priority...');
+      console.log('🤖 Analyzing message with improved intent classifier...');
       
-      // PRIORITY 1: Check for explicit task creation/management commands first
-      const explicitTaskCommands = [
-        'luo tehtävä', 'lisää tehtävä', 'anna tehtävä', 'delegoi tehtävä',
-        'create task', 'add task', 'assign task', 'give task',
-        'muokkaa tehtävä', 'päivitä tehtävä', 'edit task',
-        'merkitse tehtävä', 'complete task', 'valmis'
-      ];
+      // Use improved intent classification system
+      const context = {
+        selectedTask,
+        activeTab,
+        recentTaskCreation: this.hasRecentTaskCreation(conversationHistory)
+      };
       
-      const hasExplicitTaskCommand = explicitTaskCommands.some(cmd => 
-        userMessage.toLowerCase().includes(cmd.toLowerCase())
-      );
+      const intentResult = await this.intentClassifier.classifyIntent(userMessage, userId, context);
+      console.log('🎯 Intent classification result:', intentResult);
       
-      if (hasExplicitTaskCommand) {
-        console.log('🎯 Explicit task command detected, prioritizing task handling');
-        const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
-        if (taskDetection.hasTasks) {
-          console.log('📋 Tasks detected, asking for user confirmation');
-          return {
-            type: 'task-confirmation',
-            content: taskDetection.confirmationMessage,
-            timestamp: new Date(),
-            actions: taskDetection.actions,
-            detectedTasks: taskDetection.tasks
-          };
-        }
-      }
-
-      // PRIORITY 2: Check for superpower inquiries (only if no explicit task commands)
-      console.log('🔍 Checking for superpowers inquiry...');
-      const superpowerResponse = await this.handleSuperpowerInquiry(userMessage, userId);
-      if (superpowerResponse) {
-        console.log('✅ Superpower inquiry detected, returning structured response');
-        return {
-          type: 'superpowers',
-          content: superpowerResponse,
-          timestamp: new Date(),
-          actions: [
-            {
-              emoji: '🔍',
-              label: 'Kuka muu on hyvä?',
-              action: 'show-team-superpowers',
-              data: {}
-            }
-          ]
-        };
-      }
-
-      // PRIORITY 3: Check for general task potential (less explicit mentions)
-      console.log('🔍 Checking for potential tasks...');
-      const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
-      if (taskDetection.hasTasks) {
-        console.log('📋 Tasks detected, asking for user confirmation');
-        return {
-          type: 'task-confirmation',
-          content: taskDetection.confirmationMessage,
-          timestamp: new Date(),
-          actions: taskDetection.actions,
-          detectedTasks: taskDetection.tasks
-        };
+      // Handle different intent types with priority order
+      switch (intentResult.type) {
+        case 'explicit_task':
+        case 'management_task':
+        case 'implicit_task':
+          console.log('📋 Task-related intent detected, processing task creation...');
+          const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
+          if (taskDetection.hasTasks) {
+            return {
+              type: 'task-confirmation',
+              content: taskDetection.confirmationMessage,
+              timestamp: new Date(),
+              actions: taskDetection.actions,
+              detectedTasks: taskDetection.tasks,
+              intentClassification: intentResult
+            };
+          }
+          break;
+          
+        case 'performance_query':
+          console.log('📊 Performance query detected, processing analytics...');
+          // Let this fall through to Claude for performance analytics
+          break;
+          
+        case 'superpower_query':
+          console.log('🌟 Superpower inquiry detected, returning structured response');
+          const superpowerResponse = await this.handleSuperpowerInquiry(userMessage, userId);
+          if (superpowerResponse) {
+            return {
+              type: 'superpowers',
+              content: superpowerResponse,
+              timestamp: new Date(),
+              actions: [
+                {
+                  emoji: '🔍',
+                  label: 'Kuka muu on hyvä?',
+                  action: 'show-team-superpowers',
+                  data: {}
+                }
+              ],
+              intentClassification: intentResult
+            };
+          }
+          break;
+          
+        case 'multi_intent':
+          console.log('🔀 Multi-intent detected, processing primary intent first...');
+          // Handle the primary intent, potentially show additional options
+          return await this.handleMultiIntent(intentResult, userMessage, userId, activeTab);
+          
+        case 'casual_chat':
+        default:
+          console.log('💬 Casual chat or fallback to Claude processing...');
+          // Continue to Claude processing
+          break;
       }
       
       console.log('🤖 Sending message to Claude API...');
-      const context = await this.buildClaudeContext(userId, activeTab, selectedTask);
+      const claudeContext = await this.buildClaudeContext(userId, activeTab, selectedTask);
       
       const messages = [
         {
           role: "system",
-          content: context.systemPrompt
+          content: claudeContext.systemPrompt
         },
         ...conversationHistory,
         {
@@ -270,9 +284,10 @@ class AIService {
       // Parse and enhance response with interactive elements
       return this.enhanceClaudeResponse(
         claudeResponse.content[0].text,
-        context,
+        claudeContext,
         userId,
-        activeTab
+        activeTab,
+        intentResult
       );
 
     } catch (error) {
@@ -287,9 +302,116 @@ class AIService {
   }
 
   /**
+   * Check if there was recent task creation in conversation history
+   */
+  hasRecentTaskCreation(conversationHistory) {
+    if (!conversationHistory || conversationHistory.length === 0) return false;
+    
+    const recentMessages = conversationHistory.slice(-3); // Check last 3 messages
+    return recentMessages.some(msg => 
+      msg.type === 'task-confirmation' || 
+      (msg.content && msg.content.includes('tehtävä luotu'))
+    );
+  }
+  
+  /**
+   * Handle multi-intent scenarios
+   */
+  async handleMultiIntent(intentResult, userMessage, userId, activeTab) {
+    const { intents, primaryIntent } = intentResult;
+    
+    // Process primary intent first
+    let primaryResponse;
+    
+    if (primaryIntent === 'explicit_task' || intents.includes('explicit_task')) {
+      const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
+      if (taskDetection.hasTasks) {
+        primaryResponse = {
+          type: 'task-confirmation',
+          content: taskDetection.confirmationMessage,
+          timestamp: new Date(),
+          actions: taskDetection.actions,
+          detectedTasks: taskDetection.tasks
+        };
+      }
+    }
+    
+    if (primaryIntent === 'superpower_query' || intents.includes('superpower_query')) {
+      const superpowerResponse = await this.handleSuperpowerInquiry(userMessage, userId);
+      if (superpowerResponse) {
+        primaryResponse = {
+          type: 'superpowers',
+          content: superpowerResponse,
+          timestamp: new Date(),
+          actions: [
+            {
+              emoji: '🔍',
+              label: 'Kuka muu on hyvä?',
+              action: 'show-team-superpowers',
+              data: {}
+            }
+          ]
+        };
+      }
+    }
+    
+    // Add multi-intent actions
+    if (primaryResponse) {
+      primaryResponse.multiIntent = {
+        detected: true,
+        intents: intents,
+        additionalActions: this.generateMultiIntentActions(intents, primaryIntent)
+      };
+      
+      primaryResponse.actions = [
+        ...primaryResponse.actions,
+        ...primaryResponse.multiIntent.additionalActions
+      ];
+    }
+    
+    return primaryResponse;
+  }
+  
+  /**
+   * Generate additional actions for multi-intent scenarios
+   */
+  generateMultiIntentActions(intents, primaryIntent) {
+    const actions = [];
+    
+    // If primary was task but user also wanted superpowers
+    if (primaryIntent !== 'superpower_query' && intents.includes('superpower_query')) {
+      actions.push({
+        emoji: '🌟',
+        label: 'Näytä myös superpowers',
+        action: 'show-superpowers-secondary',
+        data: { secondary: true }
+      });
+    }
+    
+    // If primary was superpowers but user also mentioned tasks
+    if (primaryIntent !== 'explicit_task' && intents.includes('explicit_task')) {
+      actions.push({
+        emoji: '📋',
+        label: 'Luo tehtävä myös',
+        action: 'create-task-secondary',
+        data: { secondary: true }
+      });
+    }
+    
+    return actions;
+  }
+  
+  /**
+   * Record user feedback for intent classification learning
+   */
+  recordIntentFeedback(userId, originalMessage, correctIntent, confidence) {
+    this.intentClassifier.recordUserFeedback(userId, originalMessage, correctIntent, confidence);
+  }
+  
+  /**
    * Enhance Claude responses with interactive elements
    */
-  enhanceClaudeResponse(claudeContent, context, userId, activeTab) {
+  enhanceClaudeResponse(claudeContent, context, userId, activeTab, intentResult = null) {
     const response = {
       type: 'text',
       content: claudeContent,
@@ -338,6 +460,42 @@ class AIService {
     const strategicMatch = claudeContent.match(/(\d+)\/10/);
     if (strategicMatch) {
       response.strategicValue = parseInt(strategicMatch[1]);
+    }
+    
+    // Add intent classification metadata for debugging and learning
+    if (intentResult) {
+      response.intentClassification = {
+        type: intentResult.type,
+        confidence: intentResult.confidence,
+        method: intentResult.method || 'hybrid',
+        classifications: intentResult.classifications || []
+      };
+      
+      // Add feedback action for incorrect classifications
+      if (intentResult.confidence < 0.8) {
+        response.actions.push({
+          emoji: '🔧',
+          label: 'AI ymmärsi väärin?',
+          action: 'correct-intent',
+          data: { 
+            originalMessage: intentResult.message,
+            detectedIntent: intentResult.type,
+            confidence: intentResult.confidence
+          }
+        });
+      }
+    }
+    
+    // Add feature flag debug info for development
+    if (process.env.NODE_ENV === 'development') {
+      response.debugInfo = {
+        intentResult: intentResult,
+        featureFlags: {
+          improvedClassifier: this.featureFlags.isFeatureEnabled('improved_intent_classifier', userId),
+          multiIntent: this.featureFlags.isFeatureEnabled('multi_intent_handling', userId),
+          feedbackLearning: this.featureFlags.isFeatureEnabled('feedback_learning_system', userId)
+        }
+      };
     }
 
     return response;
