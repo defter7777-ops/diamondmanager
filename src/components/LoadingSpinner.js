@@ -10,15 +10,21 @@ const LoadingSpinner = ({ message = 'Loading...' }) => {
           animate={{ opacity: 1, scale: 1 }}
           className="glass-card rounded-xl p-8 text-center"
         >
-          {/* Spinning Diamond */}
+          {/* Spinning Logo */}
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 diamond-shape bg-gradient-to-br from-blue-400 to-purple-600 mx-auto mb-4"
-          />
+            className="mx-auto mb-4"
+          >
+            <img 
+              src="/diamond_manager_logo.png" 
+              alt="DiamondManager" 
+              className="w-12 h-12 rounded"
+            />
+          </motion.div>
           
           {/* Message */}
-          <p className="text-white font-poppins text-lg font-medium">
+          <p className="text-white font-poppins text-base font-medium">
             {message}
           </p>
           

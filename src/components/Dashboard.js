@@ -78,13 +78,17 @@ const Dashboard = ({ currentUser, onLogout }) => {
   return (
     <div className="min-h-screen p-4 font-poppins">
       {/* Header */}
-      <header className="glass-card rounded-xl p-6 mb-6">
+      <header className="glass-card rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 diamond-shape bg-gradient-to-br from-blue-400 to-purple-600" />
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/diamond_manager_logo.png" 
+              alt="DiamondManager" 
+              className="w-8 h-8 rounded"
+            />
             <div>
-              <h1 className="text-2xl font-bold text-white">DiamondManager</h1>
-              <p className="text-white/70">Tervetuloa takaisin, {currentUser?.firstName}!</p>
+              <h1 className="text-lg font-semibold text-white">DiamondManager</h1>
+              <p className="text-white/70 text-sm">Tervetuloa takaisin, {currentUser?.firstName}!</p>
             </div>
           </div>
           <button
@@ -105,7 +109,9 @@ const Dashboard = ({ currentUser, onLogout }) => {
           className="glass-card rounded-xl p-4 mb-6 border border-yellow-400/30"
         >
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 diamond-shape bg-gradient-to-br from-yellow-400 to-yellow-600 flex-shrink-0" />
+            <div className="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-yellow-400 text-lg">🤖</span>
+            </div>
             <div>
               <p className="text-yellow-200 font-semibold text-sm">Timantti Valmentaja</p>
               <p className="text-white">{coachingMessage.message}</p>

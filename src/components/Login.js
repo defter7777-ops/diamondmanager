@@ -41,9 +41,13 @@ const Login = ({ onLogin }) => {
         <div className="glass-card rounded-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 diamond-shape bg-gradient-to-br from-blue-400 to-purple-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-white font-poppins">DiamondManager</h1>
-            <p className="text-white/80 font-poppins mt-2">Diamond Makers Team Platform</p>
+            <img 
+              src="/diamond_manager_logo.png" 
+              alt="DiamondManager" 
+              className="w-12 h-12 rounded mx-auto mb-4"
+            />
+            <h1 className="text-xl font-semibold text-white font-poppins">DiamondManager</h1>
+            <p className="text-white/80 font-poppins mt-2 text-sm">Diamond Makers Team Platform</p>
           </div>
 
           {/* Form */}
