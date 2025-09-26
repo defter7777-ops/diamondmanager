@@ -930,7 +930,7 @@ Kerro mitä mietit! ✨`;
                     {message.type === 'user' ? currentUser?.firstName : 'DiamondCoach AI'}
                   </span>
                   <span className="text-xs text-white/40">
-                    {message.timestamp.toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' })}
+                    {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('fi-FI', { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
                   {message.messageType && message.messageType !== 'text' && (
                     <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded">
