@@ -102,7 +102,7 @@ class AIService {
         `
       };
 
-      // Add task context if a task is selected
+      // Add task context if a task is selected with intelligent analysis
       const taskContext = selectedTask ? `
         
         🎯 VALITTU TEHTÄVÄ (FOKUS):
@@ -111,9 +111,19 @@ class AIService {
         • Status: ${selectedTask.status}
         • Prioriteetti: ${selectedTask.priority}
         • Vastuuhenkilö: ${selectedTask.assignedTo || 'Ei määritelty'}
+        • Strateginen arvo: ${selectedTask.strategicValue || 'Ei määritelty'}/10
         
-        TÄRKEÄÄ: Käyttäjä on valinnut tämän tehtävän ja haluaa keskittyä siihen. 
-        Anna neuvoja ja apua erityisesti tämän tehtävän eteenpäin viemiseksi.
+        TÄRKEÄÄ KONTEKSTUAALINEN OHJEISTUS:
+        1. Käyttäjä on valinnut TÄMÄN TEHTÄVÄN ja haluaa keskittyä siihen
+        2. Anna älykkäitä kommentteja tehtävän tilasta:
+           - Jos status on "pending": Analysoi miksi tehtävä odottaa ja mitä tarvitaan eteenpäin siirtymiseksi
+           - Jos status on "active": Kannusta etenemään ja kysy konkreettisista askeleista
+           - Jos prioriteetti on "high": Korosta kiireellisyyttä ja tarjoa nopeita ratkaisuja
+           - Jos assignedTo on määritelty: Kommentoi tiimin jäsenen soveltuvuutta tehtävään
+        3. Ehdota konkreettisia seuraavia askeleita tehtävän eteenpäin viemiseksi
+        4. Jos tehtävä liittyy Kurkipotku.com:iin, korosta sen strategista tärkeyttä (PRIORITEETTI #1)
+        5. Jos tehtävä vaatii tiimityötä, ehdota sopivia henkilöitä superpowers-tietojen perusteella
+        6. Kysy tarkenneita kysymyksiä tehtävän yksityiskohdista
         ` : '';
 
       return {

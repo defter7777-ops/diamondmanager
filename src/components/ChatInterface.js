@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, Reorder } from 'framer-motion';
 import aiService from '../services/aiService';
 import profileService from '../services/profileService';
 import taskService from '../services/taskService';
@@ -640,15 +640,43 @@ Kerro mitä mietit! ✨`;
   const handleTaskSelect = (task) => {
     setSelectedTask(task);
     
-    // Add a system message about task focus
+    // Clear conversation history and start fresh with task context
+    const userName = currentUser?.firstName || 'Käyttäjä';
     const taskFocusMessage = {
       id: Date.now(),
-      type: 'system',
-      content: `🎯 **Keskitytään tehtävään:** ${task.title}\n\nKuvaus: ${task.description}\nStatus: ${task.status}\nPrioriteetti: ${task.priority}\n\n💡 Voin nyt auttaa sinua tämän tehtävän kanssa. Kysy mitä tahansa liittyen tähän tehtävään!`,
-      timestamp: new Date().toISOString()
+      type: 'ai',
+      content: `🎯 **Siirryttiin tehtävään: ${task.title}**\n\nMoikka ${userName}! Nyt keskitymme tähän tehtävään:\n\n📋 **Tehtävä:** ${task.title}\n📝 **Kuvaus:** ${task.description}\n📊 **Status:** ${task.status}\n⭐ **Prioriteetti:** ${task.priority}\n🎯 **Strateginen arvo:** ${task.strategicValue || 'Ei määritelty'}/10\n\n💭 **Mitä mietit tästä tehtävästä?**\n• Tarvitsetko apua suunnittelussa?\n• Onko esteitä tai haasteita?\n• Haluatko jakaa tehtävän osiin?\n• Tarvitsetko tiimin jäsentä mukaan?\n\nKerro mitä ajattelet! ✨`,
+      timestamp: new Date().toISOString(),
+      messageType: 'task-focus'
     };
     
-    setMessages(prev => [...prev, taskFocusMessage]);
+    // Clear messages and add fresh task-focused message
+    setMessages([taskFocusMessage]);
+  };
+
+  // Handle task reordering
+  const handleTaskReorder = (newOrder) => {
+    setActiveTasks(newOrder);
+    
+    // Add a system message about reordering
+    const reorderMessage = {
+      id: Date.now(),
+      type: 'ai',
+      content: `📋 **Tehtävien järjestys päivitetty!**\n\nUusi prioriteettijärjestys:\n\n${newOrder.map((task, index) => `${index + 1}. ${task.title} (${task.priority})`).join('\n')}\n\n💡 Korkeammalla listassa olevat tehtävät tulkitaan tärkeämmiksi. Hyvä priorisointityö! 🎯`,
+      timestamp: new Date().toISOString(),
+      messageType: 'task-reorder'
+    };
+    
+    setMessages(prev => [...prev, reorderMessage]);
+    
+    // Update task service with new order
+    const userId = currentUser?.id || currentUser?.firstName?.toLowerCase() || 'user';
+    newOrder.forEach((task, index) => {
+      taskService.updateTask(task.id, { 
+        displayOrder: index,
+        lastModified: new Date().toISOString()
+      }, userId);
+    });
   };
 
   const tabs = [
@@ -786,102 +814,142 @@ Kerro mitä mietit! ✨`;
               </span>
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Tasks View */}
-              {activeTab !== 'tavoitteet' && activeTasks.map((task) => {
-                const completionRate = task.status === 'completed' ? 100 : 
-                                      task.status === 'active' ? 60 : 20;
-                const priorityColor = task.priority === 'high' ? 'text-red-400' : 
-                                    task.priority === 'medium' ? 'text-yellow-400' : 'text-green-400';
-                
-                return (
-                  <button
-                    key={task.id}
-                    onClick={() => handleTaskSelect(task)}
-                    className={`w-full text-left bg-white/5 hover:bg-white/10 rounded-lg p-3 border transition-all ${
-                      selectedTask?.id === task.id 
-                        ? 'border-blue-400/50 bg-blue-500/10' 
-                        : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-medium text-white line-clamp-2">{task.title}</h4>
-                      <span className={`text-xs ${priorityColor} uppercase font-bold`}>
-                        {task.priority}
-                      </span>
-                    </div>
-                    
-                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{task.description}</p>
-                    
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-white/50">Eteneminen</span>
-                        <span className="text-xs text-white/70">{completionRate}%</span>
-                      </div>
-                      <div className="w-full bg-white/10 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${completionRate}%` }}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2 flex justify-between items-center">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        task.status === 'active' ? 'bg-blue-500/20 text-blue-300' : 
-                        task.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
-                        'bg-green-500/20 text-green-300'
-                      }`}>
-                        {task.status === 'active' ? 'Aktiivinen' : 
-                         task.status === 'pending' ? 'Odottaa' : 'Valmis'}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Goals View */}
-              {activeTab === 'tavoitteet' && activeGoals.map((goal) => {
-                const categoryColor = goal.category === 'revenue' ? 'text-green-400' :
-                                    goal.category === 'products' ? 'text-blue-400' : 'text-purple-400';
-                
-                return (
-                  <div key={goal.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-medium text-white line-clamp-2">{goal.title}</h4>
-                      <span className={`text-xs ${categoryColor} uppercase font-bold`}>
-                        {goal.category}
-                      </span>
-                    </div>
-                    
-                    <p className="text-xs text-white/60 mb-3 line-clamp-2">{goal.description}</p>
-                    
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-white/50">Edistyminen</span>
-                        <span className="text-xs text-white/70">{goal.progress}%</span>
-                      </div>
-                      <div className="w-full bg-white/10 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${goal.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2 flex justify-between items-center">
-                      <span className="text-xs text-white/50">
-                        {goal.current.toLocaleString()} / {goal.target.toLocaleString()} {goal.unit}
-                      </span>
-                      <span className="text-xs text-white/40">
-                        📅 {goal.deadline}
-                      </span>
+            <div className="space-y-4">
+              {/* Tasks View - Drag and Drop */}
+              {activeTab !== 'tavoitteet' && activeTasks.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-white/70">💡 Vedä ja pudota järjestyksen muuttamiseksi</p>
+                    <div className="text-xs text-white/50">
+                      {activeTasks.length} tehtävää
                     </div>
                   </div>
-                );
-              })}
+                  <Reorder.Group 
+                    axis="y" 
+                    values={activeTasks} 
+                    onReorder={handleTaskReorder}
+                    className="space-y-3"
+                  >
+                    {activeTasks.map((task, index) => {
+                      const completionRate = task.status === 'completed' ? 100 : 
+                                            task.status === 'active' ? 60 : 20;
+                      const priorityColor = task.priority === 'high' ? 'text-red-400' : 
+                                          task.priority === 'medium' ? 'text-yellow-400' : 'text-green-400';
+                      
+                      return (
+                        <Reorder.Item 
+                          key={task.id} 
+                          value={task}
+                          className="cursor-grab active:cursor-grabbing"
+                        >
+                          <div
+                            className={`w-full text-left bg-white/5 hover:bg-white/10 rounded-lg p-3 border transition-all ${
+                              selectedTask?.id === task.id 
+                                ? 'border-blue-400/50 bg-blue-500/10' 
+                                : 'border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-2 flex-1">
+                                <div className="flex items-center justify-center w-6 h-6 text-xs font-bold text-white/70 bg-white/10 rounded">
+                                  {index + 1}
+                                </div>
+                                <button
+                                  onClick={() => handleTaskSelect(task)}
+                                  className="flex-1 text-left"
+                                >
+                                  <h4 className="text-sm font-medium text-white line-clamp-2">{task.title}</h4>
+                                </button>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`text-xs ${priorityColor} uppercase font-bold`}>
+                                  {task.priority}
+                                </span>
+                                <div className="w-4 h-4 text-white/30 cursor-grab">
+                                  ⋮⋮
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="pl-8">
+                              <p className="text-xs text-white/60 mb-3 line-clamp-2">{task.description}</p>
+                              
+                              {/* Progress Bar */}
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-white/50">Eteneminen</span>
+                                  <span className="text-xs text-white/70">{completionRate}%</span>
+                                </div>
+                                <div className="w-full bg-white/10 rounded-full h-2">
+                                  <div 
+                                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${completionRate}%` }}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <div className="mt-2 flex justify-between items-center">
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  task.status === 'active' ? 'bg-blue-500/20 text-blue-300' : 
+                                  task.status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                                  'bg-green-500/20 text-green-300'
+                                }`}>
+                                  {task.status === 'active' ? 'Aktiivinen' : 
+                                   task.status === 'pending' ? 'Odottaa' : 'Valmis'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Reorder.Item>
+                      );
+                    })}
+                  </Reorder.Group>
+                </div>
+              )}
+
+              {/* Goals View - Non-draggable grid */}
+              {activeTab === 'tavoitteet' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{activeGoals.map((goal) => {
+                  const categoryColor = goal.category === 'revenue' ? 'text-green-400' :
+                                      goal.category === 'products' ? 'text-blue-400' : 'text-purple-400';
+                  
+                  return (
+                    <div key={goal.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="text-sm font-medium text-white line-clamp-2">{goal.title}</h4>
+                        <span className={`text-xs ${categoryColor} uppercase font-bold`}>
+                          {goal.category}
+                        </span>
+                      </div>
+                      
+                      <p className="text-xs text-white/60 mb-3 line-clamp-2">{goal.description}</p>
+                      
+                      {/* Progress Bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-white/50">Edistyminen</span>
+                          <span className="text-xs text-white/70">{goal.progress}%</span>
+                        </div>
+                        <div className="w-full bg-white/10 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${goal.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 flex justify-between items-center">
+                        <span className="text-xs text-white/50">
+                          {goal.current.toLocaleString()} / {goal.target.toLocaleString()} {goal.unit}
+                        </span>
+                        <span className="text-xs text-white/40">
+                          📅 {goal.deadline}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}</div>
+              )}
               
               {/* Empty States */}
               {activeTab !== 'tavoitteet' && activeTasks.length === 0 && (
