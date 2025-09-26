@@ -661,13 +661,17 @@ Kerro mitä mietit! ✨`;
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header with Logo and User Info */}
       <div className="flex-shrink-0 border-b border-white/10 bg-black/20">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+        <div className="max-w-4xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 diamond-shape bg-gradient-to-br from-blue-400 to-purple-600" />
+            <div className="flex items-center space-x-2">
+              <img 
+                src="/diamond_manager_logo.png" 
+                alt="DiamondManager" 
+                className="w-6 h-6 rounded"
+              />
               <div>
-                <h1 className="text-lg font-bold text-white">DiamondManager AI</h1>
-                <p className="text-sm text-white/60">Claude-powered team assistant</p>
+                <h1 className="text-base font-semibold text-white">DiamondManager AI</h1>
+                <p className="text-xs text-white/60">Claude • Konteksti päivitetty</p>
               </div>
             </div>
             
