@@ -167,9 +167,37 @@ class AIService {
    */
   async sendMessageToClaude(userMessage, userId, activeTab = 'diamondmakers', conversationHistory = [], selectedTask = null) {
     try {
-      console.log('🤖 Analyzing message for superpowers inquiry...');
+      console.log('🤖 Analyzing message priority...');
       
-      // Check if this is a superpower inquiry first
+      // PRIORITY 1: Check for explicit task creation/management commands first
+      const explicitTaskCommands = [
+        'luo tehtävä', 'lisää tehtävä', 'anna tehtävä', 'delegoi tehtävä',
+        'create task', 'add task', 'assign task', 'give task',
+        'muokkaa tehtävä', 'päivitä tehtävä', 'edit task',
+        'merkitse tehtävä', 'complete task', 'valmis'
+      ];
+      
+      const hasExplicitTaskCommand = explicitTaskCommands.some(cmd => 
+        userMessage.toLowerCase().includes(cmd.toLowerCase())
+      );
+      
+      if (hasExplicitTaskCommand) {
+        console.log('🎯 Explicit task command detected, prioritizing task handling');
+        const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
+        if (taskDetection.hasTasks) {
+          console.log('📋 Tasks detected, asking for user confirmation');
+          return {
+            type: 'task-confirmation',
+            content: taskDetection.confirmationMessage,
+            timestamp: new Date(),
+            actions: taskDetection.actions,
+            detectedTasks: taskDetection.tasks
+          };
+        }
+      }
+
+      // PRIORITY 2: Check for superpower inquiries (only if no explicit task commands)
+      console.log('🔍 Checking for superpowers inquiry...');
       const superpowerResponse = await this.handleSuperpowerInquiry(userMessage, userId);
       if (superpowerResponse) {
         console.log('✅ Superpower inquiry detected, returning structured response');
@@ -188,7 +216,7 @@ class AIService {
         };
       }
 
-      // Check if this message contains potential tasks
+      // PRIORITY 3: Check for general task potential (less explicit mentions)
       console.log('🔍 Checking for potential tasks...');
       const taskDetection = await this.detectPotentialTasks(userMessage, userId, activeTab);
       if (taskDetection.hasTasks) {
@@ -569,16 +597,43 @@ class AIService {
   }
 
   /**
-   * Extract tasks from user message
+   * Extract tasks from user message with improved assignment detection
    */
   async extractTasksFromMessage(message, userId, activeTab) {
-    const sentences = message.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const normalizedMessage = message.toLowerCase().trim();
     const tasks = [];
     
+    // PATTERN 1: Direct assignment pattern "anna tehtävä [nimi]: [kuvaus]"
+    const assignmentMatch = message.match(/(?:anna tehtävä|lisää tehtävä|luo tehtävä|delegoi tehtävä)\s+(\w+)(?:\s*\(.*\))?\s*[:.]?\s*(.+)/i);
+    if (assignmentMatch) {
+      const assignedTo = assignmentMatch[1].toLowerCase();
+      const taskDescription = assignmentMatch[2].trim();
+      
+      let strategicValue = 7; // Higher for explicit assignments
+      if (taskDescription.toLowerCase().includes('sähköposti') || taskDescription.toLowerCase().includes('mailgun')) strategicValue = 8;
+      if (taskDescription.toLowerCase().includes('kurkipotku')) strategicValue = 9;
+      
+      tasks.push({
+        title: this.cleanTaskTitle(taskDescription),
+        description: taskDescription,
+        assignedTo: assignedTo,
+        strategicValue: strategicValue,
+        estimatedTime: this.estimateTaskTime(taskDescription),
+        timeContext: this.extractTimeContext(message),
+        category: this.categorizeTask(taskDescription, activeTab),
+        priority: strategicValue >= 8 ? 'high' : 'medium',
+        source: 'ai-detected-assignment'
+      });
+      
+      return tasks;
+    }
+    
+    // PATTERN 2: General task indicators
+    const sentences = message.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const taskIndicators = [
       'pitää tehdä', 'täytyy tehdä', 'tee', 'toteuta', 'luo', 'rakenna', 'korjaa',
       'suunnittele', 'analysoi', 'tutki', 'selvitä', 'ota yhteyttä', 'kirjoita',
-      'päivitä', 'lisää', 'poista', 'muuta', 'kehitä', 'testaa'
+      'päivitä', 'lisää', 'poista', 'muuta', 'kehitä', 'testaa', 'asettaa', 'valmistaa'
     ];
     
     for (let sentence of sentences) {
@@ -589,30 +644,41 @@ class AIService {
         let strategicValue = 5; // default
         
         if (normalizedSentence.includes('kurkipotku')) strategicValue = 9;
+        else if (normalizedSentence.includes('sähköposti') || normalizedSentence.includes('mailgun')) strategicValue = 8;
         else if (normalizedSentence.includes('asiakas') || normalizedSentence.includes('client')) strategicValue = 8;
         else if (normalizedSentence.includes('urgent') || normalizedSentence.includes('kiire')) strategicValue = 7;
         else if (normalizedSentence.includes('bug') || normalizedSentence.includes('korjaa')) strategicValue = 6;
-        
-        // Extract time context
-        let timeContext = 'Ei määritelty';
-        if (normalizedSentence.includes('tänään')) timeContext = 'Tänään';
-        else if (normalizedSentence.includes('huomenna')) timeContext = 'Huomenna';
-        else if (normalizedSentence.includes('tällä viikolla')) timeContext = 'Tällä viikolla';
-        else if (normalizedSentence.includes('ensi viikolla')) timeContext = 'Ensi viikolla';
         
         tasks.push({
           title: this.cleanTaskTitle(sentence.trim()),
           description: sentence.trim(),
           strategicValue: strategicValue,
           estimatedTime: this.estimateTaskTime(sentence),
-          timeContext: timeContext,
+          timeContext: this.extractTimeContext(sentence),
           category: this.categorizeTask(sentence, activeTab),
+          priority: strategicValue >= 8 ? 'high' : strategicValue >= 6 ? 'medium' : 'low',
           source: 'ai-detected'
         });
       }
     }
     
     return tasks;
+  }
+
+  /**
+   * Extract time context from message
+   */
+  extractTimeContext(message) {
+    const normalizedMessage = message.toLowerCase();
+    
+    if (normalizedMessage.includes('tänään')) return 'Tänään';
+    if (normalizedMessage.includes('huomenna')) return 'Huomenna';
+    if (normalizedMessage.includes('tällä viikolla')) return 'Tällä viikolla';
+    if (normalizedMessage.includes('ensi viikolla')) return 'Ensi viikolla';
+    if (normalizedMessage.includes('kiire')) return 'Kiireellinen';
+    if (normalizedMessage.includes('50%') || normalizedMessage.includes('valmiina')) return 'Osittain valmis';
+    
+    return 'Ei määritelty';
   }
 
   /**
@@ -638,14 +704,19 @@ class AIService {
    * Helper methods for task processing
    */
   cleanTaskTitle(sentence) {
-    // Remove task indicators and clean up the title
+    // Remove task indicators and assignment patterns
     const cleanSentence = sentence
+      .replace(/^(anna tehtävä|lisää tehtävä|luo tehtävä|delegoi tehtävä)\s+\w+(?:\s*\(.*\))?\s*[:.]?\s*/gi, '')
       .replace(/^(pitää tehdä|täytyy tehdä|tee|toteuta|luo|rakenna|korjaa|suunnittele|analysoi)/gi, '')
       .replace(/^\s*(että\s*)?/gi, '')
+      .replace(/^[:.]\s*/, '') // Remove leading colons or dots
       .trim();
     
-    // Capitalize first letter
-    return cleanSentence.charAt(0).toUpperCase() + cleanSentence.slice(1);
+    // Capitalize first letter and ensure reasonable length
+    const title = cleanSentence.charAt(0).toUpperCase() + cleanSentence.slice(1);
+    
+    // Limit title length for readability
+    return title.length > 60 ? title.substring(0, 57) + '...' : title;
   }
 
   estimateTaskTime(sentence) {
