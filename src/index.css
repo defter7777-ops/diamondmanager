@@ -113,3 +113,66 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+/* Enhanced mobile touch targets */
+@layer utilities {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .safe-touch {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* Enhanced contrast utilities */
+.text-high-contrast {
+  color: rgb(248 250 252); /* slate-50 */
+}
+
+.text-medium-contrast {
+  color: rgb(226 232 240); /* slate-200 */
+}
+
+.text-low-contrast {
+  color: rgb(148 163 184); /* slate-400 */
+}
+
+/* Logo enhancement animations */
+@keyframes logo-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(147, 51, 234, 0.4);
+  }
+}
+
+.logo-glow {
+  animation: logo-glow 3s ease-in-out infinite;
+}
+
+/* Enhanced focus styles for accessibility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-4 focus:ring-blue-400/30 focus:ring-offset-2 focus:ring-offset-transparent;
+}
+
+/* Mobile-optimized text sizes */
+@screen sm {
+  .text-mobile-sm {
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.25rem; /* 20px */
+  }
+  
+  .text-mobile-base {
+    font-size: 1rem; /* 16px */
+    line-height: 1.5rem; /* 24px */
+  }
+  
+  .text-mobile-lg {
+    font-size: 1.125rem; /* 18px */
+    line-height: 1.75rem; /* 28px */
+  }
+}

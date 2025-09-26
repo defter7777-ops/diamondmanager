@@ -687,37 +687,49 @@ Kerro mitä mietit! ✨`;
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header with Logo and User Info */}
-      <div className="flex-shrink-0 border-b border-white/10 bg-black/20">
-        <div className="max-w-4xl mx-auto px-4 py-2">
+      {/* Header with Logo and User Info - Enhanced Contrast */}
+      <div className="flex-shrink-0 border-b border-white/20 bg-black/30 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 sm:py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <img 
-                src="/diamond_manager_logo.png" 
-                alt="DiamondManager" 
-                className="w-6 h-6 rounded"
-              />
-              <div>
-                <h1 className="text-base font-semibold text-white">DiamondManager AI</h1>
-                <p className="text-xs text-white/60">Claude • Konteksti päivitetty</p>
+            <div className="flex items-center space-x-3 sm:space-x-2">
+              {/* Enhanced Logo with Multiple Contrast Improvements */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-white/10 rounded-xl blur-sm"></div>
+                <img 
+                  src="/diamond_manager_logo.png" 
+                  alt="DiamondManager" 
+                  className="relative w-10 h-10 sm:w-8 sm:h-8 md:w-7 md:h-7 rounded-xl bg-white/8 p-1 ring-2 ring-white/25 shadow-lg backdrop-blur-sm hover:ring-white/40 transition-all duration-200"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-base font-semibold text-white leading-tight tracking-tight">
+                  DiamondManager AI
+                </h1>
+                <p className="text-sm sm:text-xs text-slate-200 leading-none mt-0.5">
+                  Claude • Konteksti päivitetty
+                </p>
               </div>
             </div>
             
-            {/* Selected Task Indicator - Desktop */}
+            {/* Selected Task Indicator - Enhanced Desktop */}
             {selectedTask && (
-              <div className="hidden md:flex items-center space-x-2 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-400/30">
-                <span className="text-blue-300 text-sm">🎯</span>
+              <div className="hidden lg:flex items-center space-x-3 bg-blue-500/15 px-4 py-2.5 rounded-xl border border-blue-400/40 backdrop-blur-sm shadow-lg">
+                <span className="text-blue-200 text-lg">🎯</span>
                 <div className="text-sm">
-                  <div className="font-medium text-white truncate max-w-48">
+                  <div className="font-semibold text-white truncate max-w-48 leading-tight">
                     {selectedTask.title}
                   </div>
-                  <div className="text-blue-300 text-xs flex items-center space-x-2">
-                    <span>⭐ {selectedTask.strategicValue || 'N/A'}/10</span>
-                    <span>•</span>
-                    <span>📋 {selectedTask.status}</span>
+                  <div className="text-blue-200 text-xs flex items-center space-x-2 mt-1">
+                    <span className="bg-blue-500/20 px-2 py-0.5 rounded-full">
+                      ⭐ {selectedTask.strategicValue || 'N/A'}/10
+                    </span>
+                    <span className="bg-slate-500/20 px-2 py-0.5 rounded-full">
+                      📋 {selectedTask.status}
+                    </span>
                     <button
                       onClick={() => setSelectedTask(null)}
-                      className="text-blue-300/70 hover:text-blue-300 ml-2"
+                      className="text-blue-200/70 hover:text-blue-200 hover:bg-blue-500/20 rounded-full p-1 transition-all duration-150 ml-1"
+                      aria-label="Poista tehtävävalinta"
                     >
                       ✕
                     </button>
@@ -726,68 +738,116 @@ Kerro mitä mietit! ✨`;
               </div>
             )}
             
-            <div className="flex items-center space-x-4">
-              {/* Tab Navigation - Compact */}
-              <div className="flex space-x-1">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Enhanced Mobile-First Tab Navigation */}
+              <div className="flex space-x-0.5 sm:space-x-1">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-3 py-1 text-sm rounded-md transition-all ${
+                    className={`relative px-2 py-2 sm:px-3 sm:py-1.5 text-xs sm:text-sm rounded-xl transition-all duration-200 min-w-0 ${
                       activeTab === tab.id
-                        ? 'bg-blue-500/30 text-blue-200'
-                        : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                        ? 'bg-blue-500/25 text-blue-100 ring-1 ring-blue-400/50 shadow-lg backdrop-blur-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-white/8 active:scale-95'
                     }`}
+                    aria-label={tab.label}
                   >
-                    {tab.icon} {tab.label.split(' ')[0]}
+                    {/* Mobile: Icon only */}
+                    <span className="block sm:hidden text-base">{tab.icon}</span>
+                    {/* Desktop: Icon + Text */}
+                    <span className="hidden sm:inline">{tab.icon} {tab.label.split(' ')[0]}</span>
+                    
+                    {/* Active indicator dot for mobile */}
+                    {activeTab === tab.id && (
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full sm:hidden"></div>
+                    )}
                   </button>
                 ))}
               </div>
               
-              {/* Active Tasks/Goals Toggle */}
+              {/* Enhanced Tasks/Goals Toggle */}
               <button
                 onClick={() => setShowTaskPanel(!showTaskPanel)}
-                className="px-3 py-1 text-sm rounded-md transition-all flex items-center space-x-1 hover:bg-white/5"
+                className={`px-2 py-2 sm:px-3 sm:py-1.5 text-xs sm:text-sm rounded-xl transition-all duration-200 flex items-center space-x-1 min-w-[44px] justify-center ${
+                  showTaskPanel 
+                    ? 'bg-white/15 text-white ring-1 ring-white/20' 
+                    : 'hover:bg-white/8 text-slate-300 hover:text-white active:scale-95'
+                }`}
                 title={activeTab === 'tavoitteet' ? 'Näytä tavoitteet' : 'Näytä aktiiviset tehtävät'}
+                aria-label={`${showTaskPanel ? 'Piilota' : 'Näytä'} ${activeTab === 'tavoitteet' ? 'tavoitteet' : 'tehtävät'}`}
               >
-                <span>{activeTab === 'tavoitteet' ? '🎯' : '📋'}</span>
-                <span className="text-white/70">
+                <span className="text-base sm:text-sm">{activeTab === 'tavoitteet' ? '🎯' : '📋'}</span>
+                <span className="hidden sm:inline font-medium">
                   {activeTab === 'tavoitteet' ? activeGoals.length : activeTasks.length}
                 </span>
-                {showTaskPanel && <span className="text-white/50">▲</span>}
-                {!showTaskPanel && <span className="text-white/50">▼</span>}
+                <span className="text-xs hidden sm:inline ml-0.5">
+                  {showTaskPanel ? '▲' : '▼'}
+                </span>
+                
+                {/* Mobile: Show count as badge */}
+                <div className="absolute -top-1 -right-1 sm:hidden">
+                  <div className="bg-blue-500 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center font-medium leading-none">
+                    {activeTab === 'tavoitteet' ? activeGoals.length : activeTasks.length}
+                  </div>
+                </div>
               </button>
               
-              <div className="text-white/70 text-sm">
-                {currentUser?.firstName}
+              {/* User Info - Enhanced */}
+              <div className="hidden sm:flex items-center space-x-3">
+                <div className="text-slate-200 text-sm font-medium">
+                  {currentUser?.firstName}
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="px-3 py-1.5 text-sm text-slate-300 hover:text-white hover:bg-white/8 transition-all duration-200 rounded-lg active:scale-95"
+                  aria-label="Kirjaudu ulos"
+                >
+                  Kirjaudu ulos
+                </button>
               </div>
-              <button
-                onClick={onLogout}
-                className="px-3 py-1 text-sm text-white/60 hover:text-white/90 transition-colors"
-              >
-                Kirjaudu ulos
-              </button>
+              
+              {/* Mobile: User Menu */}
+              <div className="flex sm:hidden">
+                <button
+                  onClick={onLogout}
+                  className="p-2 text-slate-300 hover:text-white hover:bg-white/8 transition-all duration-200 rounded-xl active:scale-95 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label={`Kirjaudu ulos (${currentUser?.firstName})`}
+                  title={`Kirjaudu ulos • ${currentUser?.firstName}`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
           
-          {/* Mobile task display */}
+          {/* Enhanced Mobile Task Display */}
           {selectedTask && (
-            <div className="md:hidden mt-3">
-              <div className="flex items-center space-x-2 bg-blue-500/10 px-3 py-2 rounded-lg border border-blue-400/30">
-                <span className="text-blue-300 text-sm">🎯</span>
-                <div className="text-sm flex-1">
-                  <div className="font-medium text-white truncate">
+            <div className="lg:hidden mt-4">
+              <div className="flex items-start space-x-3 bg-blue-500/15 px-4 py-3 rounded-xl border border-blue-400/40 backdrop-blur-sm shadow-lg">
+                <span className="text-blue-200 text-xl mt-0.5">🎯</span>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-white truncate leading-tight mb-2">
                     {selectedTask.title}
                   </div>
-                  <div className="text-blue-300 text-xs">
-                    ⭐ {selectedTask.strategicValue || 'N/A'}/10 • 📋 {selectedTask.status}
+                  <div className="flex flex-wrap gap-2">
+                    <div className="bg-blue-500/25 text-blue-200 text-xs px-2.5 py-1 rounded-full font-medium flex items-center">
+                      ⭐ {selectedTask.strategicValue || 'N/A'}/10
+                    </div>
+                    <div className="bg-slate-500/25 text-slate-200 text-xs px-2.5 py-1 rounded-full font-medium flex items-center">
+                      📋 {selectedTask.status}
+                    </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedTask(null)}
-                  className="text-blue-300/70 hover:text-blue-300"
+                  className="text-blue-200/70 hover:text-blue-200 hover:bg-blue-500/20 rounded-full p-2 transition-all duration-150 min-w-[36px] min-h-[36px] flex items-center justify-center -mt-1"
+                  aria-label="Poista tehtävävalinta"
                 >
-                  ✕
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -795,32 +855,53 @@ Kerro mitä mietit! ✨`;
         </div>
       </div>
 
-      {/* Active Tasks/Goals Panel - Collapsible */}
+      {/* Enhanced Active Tasks/Goals Panel */}
       {showTaskPanel && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="flex-shrink-0 border-b border-white/10 bg-black/10"
+          transition={{ duration: 0.2 }}
+          className="flex-shrink-0 border-b border-white/20 bg-black/20 backdrop-blur-sm"
         >
-          <div className="max-w-4xl mx-auto px-6 py-4">
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
-              <span>{activeTab === 'tavoitteet' ? '🎯' : '📋'}</span>
-              <span>
-                {activeTab === 'tavoitteet' 
-                  ? `Tavoitteet (${activeGoals.length})` 
-                  : `Aktiiviset tehtävät (${activeTasks.length})`
-                }
-              </span>
-            </h3>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl sm:text-lg font-bold text-white flex items-center space-x-3">
+                <span className="text-2xl sm:text-xl">{activeTab === 'tavoitteet' ? '🎯' : '📋'}</span>
+                <span>
+                  {activeTab === 'tavoitteet' 
+                    ? `Tavoitteet` 
+                    : `Aktiiviset tehtävät`
+                  }
+                </span>
+                <div className="bg-blue-500/25 text-blue-200 text-sm px-3 py-1 rounded-full font-medium">
+                  {activeTab === 'tavoitteet' ? activeGoals.length : activeTasks.length}
+                </div>
+              </h3>
+              
+              {/* Close button */}
+              <button
+                onClick={() => setShowTaskPanel(false)}
+                className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl p-2 transition-all duration-150 min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
+                aria-label="Sulje paneeli"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             
             <div className="space-y-4">
               {/* Tasks View - Drag and Drop */}
               {activeTab !== 'tavoitteet' && activeTasks.length > 0 && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-white/70">💡 Vedä ja pudota järjestyksen muuttamiseksi</p>
-                    <div className="text-xs text-white/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-slate-300 flex items-center space-x-2">
+                      <span className="text-base">💡</span>
+                      <span className="hidden sm:inline">Vedä ja pudota järjestyksen muuttamiseksi</span>
+                      <span className="sm:hidden">Vedä järjestääksesi</span>
+                    </p>
+                    <div className="bg-slate-500/20 text-slate-300 text-xs px-2 py-1 rounded-full font-medium">
                       {activeTasks.length} tehtävää
                     </div>
                   </div>
