@@ -7,7 +7,7 @@
 - **Root Cause**: API key accidentally committed to git history in documentation
 
 ## 🔍 What Happened
-1. Mailgun API key `25717997b7fe31c57eaed8a4d604601d-08c79601-8d69c13e` was exposed in documentation
+1. Mailgun API key `[REDACTED-COMPROMISED-KEY]` was exposed in documentation
 2. Committed to git repository in file `/docs/TEAM_SETUP.md`
 3. Mailgun security detected exposed credentials
 4. Account automatically disabled for security protection
