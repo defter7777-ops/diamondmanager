@@ -44,7 +44,7 @@ const Login = ({ onLogin }) => {
             <img 
               src="/diamond_manager_logo.png" 
               alt="DiamondManager" 
-              className="w-12 h-12 rounded mx-auto mb-4"
+              className="w-16 h-16 rounded mx-auto mb-4"
             />
             <h1 className="text-xl font-semibold text-white font-poppins">DiamondManager</h1>
             <p className="text-white/80 font-poppins mt-2 text-sm">Diamond Makers Team Platform</p>

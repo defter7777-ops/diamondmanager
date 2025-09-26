@@ -905,7 +905,7 @@ Kerro mitä mietit! ✨`;
       )}
 
       {/* Chat Messages - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="max-w-4xl mx-auto px-4 py-4 space-y-4">
           {messages.map((message) => (
             <motion.div
